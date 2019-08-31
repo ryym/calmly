@@ -1,0 +1,19 @@
+{
+  "name": "calmly-proto",
+  "private": true,
+  "license": "MIT",
+  "scripts": {
+    "build": "rm -rf dist && node main.js"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.5.5",
+    "@babel/plugin-syntax-import-meta": "^7.2.0",
+    "@babel/preset-react": "^7.0.0",
+    "babel-loader": "^8.0.6",
+    "file-loader": "^4.2.0",
+    "react": "^16.9.0",
+    "react-dom": "^16.9.0",
+    "webpack": "^4.39.3",
+    "webpack-cli": "^3.3.7"
+  }
+}
