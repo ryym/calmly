@@ -1,13 +1,12 @@
 const webpack = require('webpack');
-const WebpackManifestPlugin = require('webpack-manifest-plugin');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
 const { promisify } = require('util');
-
 const React = require('react');
 const ReactDOMServer = require('react-dom/server');
 const { CalmlyContext } = require('./react-context');
+const { loadWebpackConfigs } = require('./webpack');
 
 const writeFile = promisify(fs.writeFile);
 const readFile = promisify(fs.readFile);
@@ -15,26 +14,11 @@ const mkdtemp = promisify(fs.mkdtemp);
 
 const build = async () => {
   const cwd = process.cwd();
-  const distPath = path.join(cwd, 'dist');
 
-  await runWebpack({
-    mode: 'development',
-    entry: path.join(cwd, 'src'),
-    output: {
-      path: distPath,
-      libraryTarget: 'commonjs2',
-      filename: 'index.js',
-    },
-    externals: 'calmly',
-    module: {
-      rules: [
-        {
-          test: /\.js$/,
-          use: ['babel-loader'],
-        },
-      ],
-    },
-  });
+  const webpackConfigs = loadWebpackConfigs({ cwd });
+  const distPath = webpackConfigs.htmlConfig.output.path;
+
+  await runWebpack(webpackConfigs.htmlConfig);
 
   const { pages, renderHTML } = require(distPath);
 
@@ -95,20 +79,8 @@ const build = async () => {
   }, {});
 
   await runWebpack({
-    mode: 'development',
     entry: entries,
-    output: {
-      path: distPath,
-    },
-    module: {
-      rules: [
-        {
-          test: /\.js$/,
-          use: ['babel-loader'],
-        },
-      ],
-    },
-    plugins: [new WebpackManifestPlugin()],
+    ...webpackConfigs.jsConfig,
   });
 
   const manifestJson = await readFile(path.join(distPath, 'manifest.json'), {
@@ -126,7 +98,7 @@ const build = async () => {
         const realPath = manifest[jsResult.jsName];
         if (realPath == null) {
           throw new Error(
-            `could not find JS file path for ${jsName}. Something goes wrong.`
+            `could not find JS file path for ${jsResult.jsName}. Something goes wrong.`
           );
         }
         const scriptTag = `<script src="/${realPath}"></script>`;
