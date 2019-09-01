@@ -5,10 +5,13 @@
   "repository": "git@github.com:ryym/calmly.git",
   "author": "ryym <ryym.64@gmail.com>",
   "license": "MIT",
-  "files": ["src"],
+  "files": [
+    "src"
+  ],
   "devDependencies": {
     "react": "^16.9.0",
     "react-dom": "^16.9.0",
-    "webpack": "^4.39.3"
+    "webpack": "^4.39.3",
+    "webpack-manifest-plugin": "^2.0.4"
   }
 }
