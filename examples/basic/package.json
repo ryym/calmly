@@ -1,0 +1,18 @@
+{
+  "name": "calmly-example-basic",
+  "private": true,
+  "main": "index.js",
+  "license": "MIT",
+  "//": [
+    "You need to link calmly repository"
+  ],
+  "scripts": {
+    "build": "rm -rf dist && node main.js"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.5.5",
+    "@babel/preset-react": "^7.0.0",
+    "babel-loader": "^8.0.6",
+    "react": "^16.9.0"
+  }
+}

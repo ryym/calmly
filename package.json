@@ -1,0 +1,14 @@
+{
+  "name": "calmly",
+  "version": "0.0.0",
+  "main": "src",
+  "repository": "git@github.com:ryym/calmly.git",
+  "author": "ryym <ryym.64@gmail.com>",
+  "license": "MIT",
+  "files": ["src"],
+  "devDependencies": {
+    "react": "^16.9.0",
+    "react-dom": "^16.9.0",
+    "webpack": "^4.39.3"
+  }
+}
