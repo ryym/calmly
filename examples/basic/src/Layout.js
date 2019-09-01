@@ -1,8 +1,8 @@
 import React from 'react';
-import { usePlaceholder } from 'calmly';
+import { useScriptTagPlaceholder } from 'calmly';
 
 export const Layout = ({ children }) => {
-  const { scriptTag } = usePlaceholder();
+  const scriptTag = useScriptTagPlaceholder();
   return (
     <html>
       <head>
