@@ -7,7 +7,7 @@ const { promisify } = require('util');
 
 const React = require('react');
 const ReactDOMServer = require('react-dom/server');
-const { CalmlyContext } = require('./react');
+const { CalmlyContext } = require('./react-context');
 
 const writeFile = promisify(fs.writeFile);
 const readFile = promisify(fs.readFile);
@@ -15,7 +15,7 @@ const mkdtemp = promisify(fs.mkdtemp);
 
 const PLACEHOLDER_JS_PATH = '---js---';
 
-const generate = async () => {
+const build = async () => {
   const cwd = process.cwd();
   const distPath = path.join(cwd, 'dist');
 
@@ -132,4 +132,4 @@ const runWebpack = config => {
   });
 };
 
-module.exports = { generate };
+module.exports = { build };

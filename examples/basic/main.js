@@ -1,3 +1,3 @@
-const calmly = require('calmly');
+const calmly = require('calmly/server');
 
-calmly.generate();
+calmly.build();
