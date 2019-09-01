@@ -3,7 +3,7 @@ import { useClientJS } from 'calmly';
 import { Layout } from './Layout';
 import { Greeter } from './Greeter';
 
-const Welcome = ({ name, layout }) => {
+const Welcome = ({ layout }) => {
   useClientJS('src/index.client.js');
   return (
     <Layout {...layout}>
@@ -15,9 +15,9 @@ const Welcome = ({ name, layout }) => {
   );
 };
 
-const About = ({ layout }) => {
+const About = () => {
   return (
-    <Layout {...layout}>
+    <Layout>
       <h1>About page</h1>
       <p>This page is completely static.</p>
     </Layout>
@@ -26,5 +26,5 @@ const About = ({ layout }) => {
 
 export const pages = {
   index: ({ scriptUrl }) => <Welcome layout={{ scriptUrl }} />,
-  about: () => <About layout={{}} />,
+  about: About,
 };
