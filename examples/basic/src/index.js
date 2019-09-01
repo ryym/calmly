@@ -1,5 +1,6 @@
 import React from 'react';
 import { useClientJS } from 'calmly';
+import { ServerStyleSheet } from 'styled-components';
 import { Layout } from './Layout';
 import { Greeter } from './Greeter';
 
@@ -27,4 +28,12 @@ const About = () => {
 export const pages = {
   index: () => <Welcome builtAt={new Date()} />,
   about: About,
+};
+
+export const renderHTML = (dom, render) => {
+  const sheet = new ServerStyleSheet();
+  const html = render(sheet.collectStyles(dom));
+  const styleTags = sheet.getStyleTags();
+  html.replace('styled-components-style-tags', styleTags);
+  return html;
 };
