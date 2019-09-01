@@ -13,8 +13,6 @@ const writeFile = promisify(fs.writeFile);
 const readFile = promisify(fs.readFile);
 const mkdtemp = promisify(fs.mkdtemp);
 
-const PLACEHOLDER_JS_PATH = '---js---';
-
 const build = async () => {
   const cwd = process.cwd();
   const distPath = path.join(cwd, 'dist');
@@ -38,7 +36,7 @@ const build = async () => {
     },
   });
 
-  const { pages } = require(distPath);
+  const { pages, renderHTML } = require(distPath);
 
   if (pages == null) {
     throw new Error('pages does not be exported');
@@ -46,10 +44,10 @@ const build = async () => {
 
   const tmpDir = await mkdtemp(path.join(os.tmpdir(), 'calmly-'));
 
-  const results = await Promise.all(
-    Object.keys(pages).map(async name => {
-      const domTree = pages[name]({ scriptUrl: PLACEHOLDER_JS_PATH });
-
+  const jsData = [];
+  const renderResults = Object.keys(pages).map(name => {
+    const domTree = pages[name]();
+    const render = domTree => {
       const ctxState = { paths: [] };
       const wrappedTree = React.createElement(
         CalmlyContext.Provider,
@@ -57,28 +55,39 @@ const build = async () => {
         domTree
       );
       const html = ReactDOMServer.renderToStaticMarkup(wrappedTree);
+      jsData.push({ name, jsPaths: ctxState.paths });
 
-      if (ctxState.paths.length === 0) {
-        return { name, html };
+      return new ResultHTML(name, html);
+    };
+
+    return renderHTML ? renderHTML(domTree, render) : render(domTree);
+  });
+
+  const jsResults = await Promise.all(
+    jsData.map(async r => {
+      let jsFilePath = null;
+
+      if (r.jsPaths.length > 0) {
+        let js = '';
+        r.jsPaths.forEach((originalPath, i) => {
+          js += `import _${i} from '${path.join(cwd, originalPath)}';`;
+        });
+        js += '\n';
+        r.jsPaths.forEach((_path, i) => {
+          js += `_${i}();`;
+        });
+
+        jsFilePath = path.join(tmpDir, `${r.name}.js`);
+        await writeFile(jsFilePath, js);
       }
 
-      let js = '';
-      ctxState.paths.forEach((originalPath, i) => {
-        js += `import _${i} from '${path.join(cwd, originalPath)}';`;
-      });
-      js += '\n';
-      ctxState.paths.forEach((_path, i) => {
-        js += `_${i}();`;
-      });
-
-      const jsFilePath = path.join(tmpDir, `${name}.js`);
-      await writeFile(jsFilePath, js);
-
-      return { name, html, jsFilePath, jsName: `${name}.js` };
+      return { name: r.name, jsFilePath, jsName: `${r.name}.js` };
     })
   );
 
-  const entries = results.reduce((es, r) => {
+  // TODO: Handle the case there are no client side JS.
+  // (If entries is empty webpack throws an error)
+  const entries = jsResults.reduce((es, r) => {
     if (r.jsFilePath) {
       es[r.name] = r.jsFilePath;
     }
@@ -108,10 +117,23 @@ const build = async () => {
   const manifest = JSON.parse(manifestJson);
 
   await Promise.all(
-    results.map(r => {
-      const realPath = manifest[r.jsName];
-      const html = r.html.replace(PLACEHOLDER_JS_PATH, `/${realPath}`);
-      return writeFile(path.join(distPath, `${r.name}.html`), html);
+    renderResults.map(html => {
+      const jsResult = jsResults.find(r => r.name === html.name());
+
+      if (jsResult.jsFilePath == null) {
+        html.replace('scriptTag', '');
+      } else {
+        const realPath = manifest[jsResult.jsName];
+        if (realPath == null) {
+          throw new Error(
+            `could not find JS file path for ${jsName}. Something goes wrong.`
+          );
+        }
+        const scriptTag = `<script src="/${realPath}"></script>`;
+        html.replace('scriptTag', scriptTag);
+      }
+
+      return writeFile(path.join(distPath, html.fileName()), html.toString());
     })
   );
 };
@@ -132,4 +154,30 @@ const runWebpack = config => {
   });
 };
 
+class ResultHTML {
+  constructor(name, html) {
+    this._name = name;
+    this._html = html;
+    this._replacements = [];
+  }
+
+  name() {
+    return this._name;
+  }
+
+  fileName() {
+    return `${this._name}.html`;
+  }
+
+  replace(key, value) {
+    this._replacements.push({ key, value });
+  }
+
+  toString() {
+    const html = this._replacements.reduce((s, r) => {
+      return s.replace(`<style>#${r.key}{}</style>`, r.value);
+    }, this._html);
+    return html;
+  }
+}
 module.exports = { build };

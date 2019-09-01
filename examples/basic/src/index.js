@@ -3,12 +3,12 @@ import { useClientJS } from 'calmly';
 import { Layout } from './Layout';
 import { Greeter } from './Greeter';
 
-const Welcome = ({ layout }) => {
+const Welcome = ({ builtAt }) => {
   useClientJS('src/index.client.js');
   return (
-    <Layout {...layout}>
+    <Layout>
       <main>
-        <p>Welcome page</p>
+        <p>Welcome page. This page was built at {builtAt.toString()}</p>
         <Greeter name="world" />
       </main>
     </Layout>
@@ -25,6 +25,6 @@ const About = () => {
 };
 
 export const pages = {
-  index: ({ scriptUrl }) => <Welcome layout={{ scriptUrl }} />,
+  index: () => <Welcome builtAt={new Date()} />,
   about: About,
 };

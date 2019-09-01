@@ -1,4 +1,4 @@
-const { createContext, useContext } = require('react');
+const { createElement, createContext, useContext } = require('react');
 
 const CalmlyContext = createContext();
 
@@ -7,4 +7,11 @@ const useClientJS = filePath => {
   state.paths.push(filePath);
 };
 
-module.exports = { CalmlyContext, useClientJS };
+const h = createElement;
+
+const usePlaceholder = () => {
+  const scriptTag = h('style', null, '#scriptTag{}');
+  return { scriptTag };
+};
+
+module.exports = { CalmlyContext, useClientJS, usePlaceholder };

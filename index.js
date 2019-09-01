@@ -1,3 +1,3 @@
-const { useClientJS } = require('./src/react-context');
+const { useClientJS, usePlaceholder } = require('./src/react-context');
 
-module.exports = { useClientJS };
+module.exports = { useClientJS, usePlaceholder };

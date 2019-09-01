@@ -1,6 +1,8 @@
 import React from 'react';
+import { usePlaceholder } from 'calmly';
 
-export const Layout = ({ children, scriptUrl }) => {
+export const Layout = ({ children }) => {
+  const { scriptTag } = usePlaceholder();
   return (
     <html>
       <head>
@@ -9,7 +11,7 @@ export const Layout = ({ children, scriptUrl }) => {
       </head>
       <body>
         {children}
-        {scriptUrl && <script src={scriptUrl} />}
+        {scriptTag}
       </body>
     </html>
   );
