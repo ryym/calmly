@@ -1,5 +1,7 @@
 import React from 'react';
-import { useClientJS } from 'calmly';
+import { useClientJS, React as React2 } from 'calmly';
+
+console.log('---', React === React2);
 
 export const Greeter = ({ name }) => {
   useClientJS('src/Greeter.client.js');

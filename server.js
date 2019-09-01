@@ -7,7 +7,7 @@ const { promisify } = require('util');
 
 const React = require('react');
 const ReactDOMServer = require('react-dom/server');
-const { CalmlyContext } = require('./react');
+const { CalmlyContext } = require('./');
 
 const writeFile = promisify(fs.writeFile);
 const readFile = promisify(fs.readFile);
@@ -27,12 +27,13 @@ const generate = async () => {
       libraryTarget: 'commonjs2',
       filename: 'index.js',
     },
-    externals: 'calmly',
+    // externals: 'react',
     module: {
       rules: [
         {
           test: /\.js$/,
           use: ['babel-loader'],
+          exclude: /node_modules/,
         },
       ],
     },
@@ -48,15 +49,24 @@ const generate = async () => {
 
   const results = await Promise.all(
     Object.keys(pages).map(async name => {
-      const domTree = pages[name]({ scriptUrl: PLACEHOLDER_JS_PATH });
+      // const domTree = pages[name]({ scriptUrl: PLACEHOLDER_JS_PATH });
+
+      console.log('start rendering');
 
       const ctxState = { paths: [] };
-      const wrappedTree = React.createElement(
-        CalmlyContext.Provider,
-        { value: ctxState },
-        domTree
-      );
+      const wrappedTree = pages[name]({
+        contextState: ctxState,
+        pageProps: { scriptUrl: PLACEHOLDER_JS_PATH },
+      });
+      console.log('dom tree rendered');
+
+      // const wrappedTree = React.createElement(
+      //   CalmlyContext.Provider,
+      //   { value: ctxState },
+      //   domTree
+      // );
       const html = ReactDOMServer.renderToStaticMarkup(wrappedTree);
+      console.log('static markup end');
 
       if (ctxState.paths.length === 0) {
         return { name, html };
@@ -85,6 +95,16 @@ const generate = async () => {
     return es;
   }, {});
 
+  // There are no client side JavaScript so just render HTMLs and exit.
+  if (Object.keys(entries).length === 0) {
+    await Promise.all(
+      results.map(r => {
+        return writeFile(path.join(distPath, `${r.name}.html`), r.html);
+      })
+    );
+    return;
+  }
+
   await runWebpack({
     mode: 'development',
     entry: entries,
@@ -96,6 +116,7 @@ const generate = async () => {
         {
           test: /\.js$/,
           use: ['babel-loader'],
+          exclude: /node_modules/,
         },
       ],
     },
@@ -132,4 +153,4 @@ const runWebpack = config => {
   });
 };
 
-module.exports = { generate };
+module.exports = { generate, React, ReactDOMServer };

@@ -1,5 +1,5 @@
 import React from 'react';
-import { useClientJS } from 'calmly';
+import { page, useClientJS } from 'calmly';
 import { Layout } from './Layout';
 import { Greeter } from './Greeter';
 
@@ -15,9 +15,9 @@ const Welcome = ({ name, layout }) => {
   );
 };
 
-const About = ({ layout }) => {
+const About = () => {
   return (
-    <Layout {...layout}>
+    <Layout>
       <h1>About page</h1>
       <p>This page is completely static.</p>
     </Layout>
@@ -25,6 +25,9 @@ const About = ({ layout }) => {
 };
 
 export const pages = {
-  index: ({ scriptUrl }) => <Welcome layout={{ scriptUrl }} />,
-  about: () => <About layout={{}} />,
+  // index: ({ scriptUrl }) => page(<Welcome layout={{ scriptUrl }} />),
+  index: page(cfg => <Welcome layout={{ scriptUrl: cfg.scriptUrl }} />),
+  about: page(About),
+  // index: ({ scriptUrl }) => <Welcome layout={{ scriptUrl }} />,
+  // about: () => <About layout={{}} />,
 };
