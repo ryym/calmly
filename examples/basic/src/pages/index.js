@@ -3,6 +3,8 @@ import { useClientJS } from 'calmly';
 import { Layout } from '../Layout';
 import { Greeter } from '../Greeter';
 
+import '../common.css';
+
 const Index = ({ builtAt }) => {
   useClientJS('src/index.client.js');
   return (

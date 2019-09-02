@@ -1,4 +1,5 @@
 const path = require('path');
+const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 
 const distDir = path.resolve(__dirname, '..', 'dist');
 
@@ -17,8 +18,14 @@ const webpackForHTML = {
         test: /\.js$/,
         use: ['babel-loader'],
       },
+      {
+        test: /\.css$/,
+        use: [MiniCssExtractPlugin.loader, 'css-loader'],
+      },
     ],
   },
+
+  plugins: [new MiniCssExtractPlugin()],
 };
 
 const webpackForClientJS = {

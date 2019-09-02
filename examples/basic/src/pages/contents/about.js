@@ -1,6 +1,9 @@
 import React from 'react';
 import { Layout } from '../../Layout';
 
+import '../../common.css';
+import '../../about.css';
+
 const About = () => {
   return (
     <Layout>
