@@ -40,6 +40,7 @@ const defaultHTMLWebpackConfig = ({ cwd }) => {
       libraryTarget: 'commonjs2',
     },
     externals,
+    plugins: [new WebpackManifestPlugin()],
   };
 };
 
@@ -77,6 +78,8 @@ const mergeHTMLConfig = (defaults, custom) => {
   } else {
     custom.externals = defaults.externals;
   }
+
+  custom.plugins = [...(custom.plugins || []), ...defaults.plugins];
 
   return custom;
 };

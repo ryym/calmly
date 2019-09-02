@@ -42,13 +42,13 @@ const build = async () => {
     entry: htmlEntries,
   });
 
+  const htmlManifest = require(path.join(distPath, 'manifest.json'));
+
   let renderHTML = undefined;
   if (rootPagesConfigExists) {
     const rootConfig = require(path.join(distPath, 'pages.js'));
     renderHTML = rootConfig.renderHTML;
   }
-
-  const tmpDir = await mkdtemp(path.join(os.tmpdir(), 'calmly-'));
 
   const jsData = [];
   const renderResults = pages.map(page => {
@@ -70,6 +70,8 @@ const build = async () => {
     const domTree = React.createElement(rootComponent, null);
     return renderHTML ? renderHTML(domTree, render) : render(domTree);
   });
+
+  const tmpDir = await mkdtemp(path.join(os.tmpdir(), 'calmly-'));
 
   const jsResults = await Promise.all(
     jsData.map(async r => {
@@ -107,10 +109,7 @@ const build = async () => {
     ...webpackConfigs.jsConfig,
   });
 
-  const manifestJson = await readFile(path.join(distPath, 'manifest.json'), {
-    encoding: 'utf8',
-  });
-  const manifest = JSON.parse(manifestJson);
+  const jsManifest = require(path.join(distPath, 'manifest.json'));
 
   await Promise.all(
     renderResults.map(html => {
@@ -119,7 +118,7 @@ const build = async () => {
       if (jsResult.jsFilePath == null) {
         html.replace('scriptTag', '');
       } else {
-        const realPath = manifest[jsResult.jsName];
+        const realPath = jsManifest[jsResult.jsName];
         if (realPath == null) {
           throw new Error(
             `could not find JS file path for ${jsResult.jsName}. Something goes wrong.`
@@ -127,6 +126,14 @@ const build = async () => {
         }
         const scriptTag = `<script src="/${realPath}"></script>`;
         html.replace('scriptTag', scriptTag);
+      }
+
+      const cssName = `${html.name()}.css`;
+      const cssRealPath = htmlManifest[cssName];
+      if (cssRealPath == null) {
+        html.replace('stylesheetTag', '');
+      } else {
+        html.replace('stylesheetTag', `<link rel="stylesheet" href="${cssRealPath}" />`);
       }
 
       return writeFile(path.join(distPath, html.fileName()), html.toString());
