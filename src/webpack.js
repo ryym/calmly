@@ -28,11 +28,9 @@ const loadWebpackConfigs = ({ cwd }) => {
 const defaultHTMLWebpackConfig = ({ cwd }) => {
   return {
     mode: process.env.NODE_ENV,
-    entry: path.join(cwd, 'src'),
     output: {
       path: path.join(cwd, 'dist'),
       libraryTarget: 'commonjs2',
-      filename: 'index.js',
     },
     externals: 'calmly',
   };
@@ -42,8 +40,14 @@ const mergeHTMLConfig = (defaults, custom) => {
   if (custom.mode == null) {
     custom.mode = defaults.mode;
   }
-  if (custom.entry == null) {
-    custom.entry = defaults.entry;
+  if (custom.entry) {
+    if (
+      Array.isArray(custom.entry) ||
+      typeof custom.entry === 'function' ||
+      typeof custom.entry === 'string'
+    ) {
+      throw new Error('[webpackForHTML]: entry must be object');
+    }
   }
 
   if (custom.output) {

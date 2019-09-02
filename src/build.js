@@ -7,6 +7,7 @@ const React = require('react');
 const ReactDOMServer = require('react-dom/server');
 const { CalmlyContext } = require('./react-context');
 const { loadWebpackConfigs } = require('./webpack');
+const { loadPageConfigs } = require('./pages');
 
 const writeFile = promisify(fs.writeFile);
 const readFile = promisify(fs.readFile);
@@ -18,19 +19,32 @@ const build = async () => {
   const webpackConfigs = loadWebpackConfigs({ cwd });
   const distPath = webpackConfigs.htmlConfig.output.path;
 
-  await runWebpack(webpackConfigs.htmlConfig);
+  const pagesRoot = path.join(cwd, 'src', 'pages');
+  const pages = await loadPageConfigs(pagesRoot);
 
-  const { pages, renderHTML } = require(distPath);
-
-  if (pages == null) {
-    throw new Error('pages does not be exported');
+  if (pages.length === 0) {
+    throw new Error('no entry pages found');
   }
+
+  const htmlEntries = pages.reduce((es, p) => {
+    es[p.name] = path.join(pagesRoot, p.relativePath);
+    return es;
+  }, {});
+
+  await runWebpack({
+    ...webpackConfigs.htmlConfig,
+    entry: htmlEntries,
+  });
+
+  // TODO: Load from 'pages.js'.
+  const renderHTML = null;
 
   const tmpDir = await mkdtemp(path.join(os.tmpdir(), 'calmly-'));
 
   const jsData = [];
-  const renderResults = Object.keys(pages).map(name => {
-    const domTree = pages[name]();
+  const renderResults = pages.map(page => {
+    const outPath = path.join(distPath, page.relativePath);
+    const domTree = require(outPath).default();
     const render = domTree => {
       const ctxState = { paths: [] };
       const wrappedTree = React.createElement(
@@ -39,9 +53,9 @@ const build = async () => {
         domTree
       );
       const html = ReactDOMServer.renderToStaticMarkup(wrappedTree);
-      jsData.push({ name, jsPaths: ctxState.paths });
+      jsData.push({ name: page.name, jsPaths: ctxState.paths });
 
-      return new ResultHTML(name, html);
+      return new ResultHTML(page.name, html);
     };
 
     return renderHTML ? renderHTML(domTree, render) : render(domTree);
