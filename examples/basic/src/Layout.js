@@ -1,15 +1,15 @@
 import React from 'react';
-import { useScriptTagPlaceholder, usePlaceholder } from 'calmly';
+import { usePlaceholder, PH_SCRIPT_TAG } from 'calmly';
 
 export const Layout = ({ children }) => {
-  const scriptTag = useScriptTagPlaceholder();
-  const placeholder = usePlaceholder();
+  const scriptTag = usePlaceholder(PH_SCRIPT_TAG);
+  const styledComponentsTag = usePlaceholder('styled-components-style-tags');
   return (
     <html>
       <head>
         <meta charSet="UTF-8" />
         <title>Welcome</title>
-        {placeholder('styled-components-style-tags')}
+        {styledComponentsTag}
       </head>
       <body>
         {children}
