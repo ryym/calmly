@@ -26,13 +26,20 @@ const loadWebpackConfigs = ({ cwd }) => {
 };
 
 const defaultHTMLWebpackConfig = ({ cwd }) => {
+  const pkgJsonPath = path.join(cwd, 'package.json');
+  let externals = ['calmly'];
+  if (fs.existsSync(pkgJsonPath)) {
+    const packageJson = require(path.join(cwd, 'package.json'));
+    const deps = Object.keys(packageJson.dependencies);
+    externals = [...externals, ...deps];
+  }
   return {
     mode: process.env.NODE_ENV,
     output: {
       path: path.join(cwd, 'dist'),
       libraryTarget: 'commonjs2',
     },
-    externals: 'calmly',
+    externals,
   };
 };
 
