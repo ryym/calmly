@@ -31,20 +31,27 @@ const build = async () => {
     return es;
   }, {});
 
+  const rootPagesConfigPath = path.join(cwd, 'src', 'pages.js');
+  const rootPagesConfigExists = fs.existsSync(rootPagesConfigPath);
+  if (rootPagesConfigExists) {
+    htmlEntries.pages = rootPagesConfigPath;
+  }
+
   await runWebpack({
     ...webpackConfigs.htmlConfig,
     entry: htmlEntries,
   });
 
-  // TODO: Load from 'pages.js'.
-  const renderHTML = null;
+  let renderHTML = undefined;
+  if (rootPagesConfigExists) {
+    const rootConfig = require(path.join(distPath, 'pages.js'));
+    renderHTML = rootConfig.renderHTML;
+  }
 
   const tmpDir = await mkdtemp(path.join(os.tmpdir(), 'calmly-'));
 
   const jsData = [];
   const renderResults = pages.map(page => {
-    const outPath = path.join(distPath, page.relativePath);
-    const domTree = require(outPath).default();
     const render = domTree => {
       const ctxState = { paths: [] };
       const wrappedTree = React.createElement(
@@ -58,6 +65,9 @@ const build = async () => {
       return new ResultHTML(page.name, html);
     };
 
+    const outPath = path.join(distPath, page.relativePath);
+    const rootComponent = require(outPath).default;
+    const domTree = React.createElement(rootComponent, null);
     return renderHTML ? renderHTML(domTree, render) : render(domTree);
   });
 
