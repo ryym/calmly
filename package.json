@@ -6,7 +6,8 @@
   "author": "ryym <ryym.64@gmail.com>",
   "license": "MIT",
   "files": [
-    "server.js"
+    "server.js",
+    "src"
   ],
   "scripts": {
     "test": "echo NO TEST"
