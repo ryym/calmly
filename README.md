@@ -35,7 +35,7 @@ In other words, **Calmly runs React only at the build time**.
 - Construct your website based on React components.
 - Generate static HTML files without emitting client side JavaScript code.
 
-Thus Calmly is suite for a website where 95% of the pages don't require JavaScript.
+Thus Calmly is suited for a website where 95% of the pages don't require JavaScript.
 
 Additionally, you can also attach some client side JavaScript to your components as needed.
 We know it is not practical nowadays to omit JavaScript completely.
@@ -55,20 +55,21 @@ But we think React still shines even if it loses these functionalities, in the s
 
 And these features still function in the server side. That's why we want to use React just for building web pages.
 
-### How about Gatsby?
+### How about Gatsby or React Static?
 
 [gatsby]: https://www.gatsbyjs.org/
+[react-static]: https://github.com/react-static/react-static
 
-Creating a website with [Gatsby][gatsby] is so much fun!
-Recently I built some websites using Gatsby and its experiences were so good.
-But it loads React on the client side in any page, to provide some client side features like SPA.
+[Gatsby][gatsby] and [React Static][react-static] are soooo nice tool to build a static site!
+Recently I built some websites using Gatsby and it was so much fun!
+But they load React on the client side in any page, to provide some client side features like SPA.
 However, not all websites require such a rich and dynamic content.
 some websites mostly consist of static pages.
 For those sites, loading bunch of JavaScript code including React would be less meaningful,
 since its content hardly change after their initial renders.
 
-This is what Calmly try to solve.
-Using Calmly you can generate JavaScript-free web pages from a UI tree composed of React components,
+This is where Camly fits in.
+Using Calmly you can generate JavaScript-free web pages with React,
 while you can bundle a few client side JavaScript code per component as well only if necessary.
 
 ## How to use

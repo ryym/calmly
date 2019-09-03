@@ -8,6 +8,9 @@
   "files": [
     "server.js"
   ],
+  "scripts": {
+    "test": "echo NO TEST"
+  },
   "devDependencies": {
     "react": "^16.9.0",
     "react-dom": "^16.9.0",
