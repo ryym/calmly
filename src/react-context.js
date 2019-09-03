@@ -9,12 +9,17 @@ const useClientJS = filePath => {
 
 const h = createElement;
 
-const usePlaceholder = () => {
-  return key => h('style', null, `#${key}{}`);
+const usePlaceholder = placeholderId => {
+  return h('style', null, `#${placeholderId}{}`);
 };
 
-const useScriptTagPlaceholder = () => {
-  return h('style', null, '#scriptTag{}');
-};
+const PH_SCRIPT_TAG = 'scriptTag';
+const PH_STYLESHEET_TAG = 'stylesheetTag';
 
-module.exports = { CalmlyContext, useClientJS, useScriptTagPlaceholder, usePlaceholder };
+module.exports = {
+  CalmlyContext,
+  useClientJS,
+  usePlaceholder,
+  PH_SCRIPT_TAG,
+  PH_STYLESHEET_TAG,
+};
