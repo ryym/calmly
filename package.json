@@ -10,6 +10,7 @@
     "src"
   ],
   "scripts": {
+    "start": "npx tsc --watch",
     "test": "echo NO TEST"
   },
   "devDependencies": {
