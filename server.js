@@ -1,3 +1,3 @@
-const { build } = require('./src/build');
+const { build } = require('./dist/lib/build');
 
 module.exports = { build };

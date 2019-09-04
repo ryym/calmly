@@ -1,11 +1,17 @@
-const path = require('path');
-const fs = require('fs');
-const WebpackManifestPlugin = require('webpack-manifest-plugin');
+import * as path from 'path';
+import * as fs from 'fs';
 
-const loadWebpackConfigs = ({ cwd }) => {
+const WebpackManifestPlugin: any = require('webpack-manifest-plugin');
+
+export interface CalmlyConfig {
+  readonly htmlConfig: any;
+  readonly jsConfig: any;
+}
+
+export const loadWebpackConfigs = ({ cwd }: { cwd: string }): CalmlyConfig => {
   const configPath = path.join(cwd, '.calmly', 'config.js');
-  const defaultHTMLConfig = defaultHTMLWebpackConfig({ cwd });
-  const defaultJSConfig = defaultClientJSWebpackConfig({ cwd });
+  const defaultHTMLConfig = defaultHTMLWebpackConfig(cwd);
+  const defaultJSConfig = defaultClientJSWebpackConfig(cwd);
 
   if (!fs.existsSync(configPath)) {
     return {
@@ -25,7 +31,7 @@ const loadWebpackConfigs = ({ cwd }) => {
   return { htmlConfig, jsConfig };
 };
 
-const defaultHTMLWebpackConfig = ({ cwd }) => {
+const defaultHTMLWebpackConfig = (cwd: string) => {
   const pkgJsonPath = path.join(cwd, 'package.json');
   let externals = ['calmly'];
   if (fs.existsSync(pkgJsonPath)) {
@@ -44,7 +50,7 @@ const defaultHTMLWebpackConfig = ({ cwd }) => {
   };
 };
 
-const mergeHTMLConfig = (defaults, custom) => {
+const mergeHTMLConfig = (defaults: any, custom: any) => {
   if (custom.mode == null) {
     custom.mode = defaults.mode;
   }
@@ -84,7 +90,7 @@ const mergeHTMLConfig = (defaults, custom) => {
   return custom;
 };
 
-const defaultClientJSWebpackConfig = ({ cwd }) => {
+const defaultClientJSWebpackConfig = (cwd: string) => {
   return {
     mode: process.env.NODE_ENV,
     // entry must be set dynamically.
@@ -95,7 +101,7 @@ const defaultClientJSWebpackConfig = ({ cwd }) => {
   };
 };
 
-const mergeClientJSConfig = (defaults, custom, htmlConfig) => {
+const mergeClientJSConfig = (defaults: any, custom: any, htmlConfig: any) => {
   if (custom.entry) {
     if (
       Array.isArray(custom.entry) ||
@@ -119,5 +125,3 @@ const mergeClientJSConfig = (defaults, custom, htmlConfig) => {
 
   return custom;
 };
-
-module.exports = { loadWebpackConfigs };

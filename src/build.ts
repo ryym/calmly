@@ -1,19 +1,18 @@
-const webpack = require('webpack');
-const path = require('path');
-const fs = require('fs');
-const os = require('os');
-const { promisify } = require('util');
-const React = require('react');
-const ReactDOMServer = require('react-dom/server');
-const { CalmlyContext } = require('./react-context');
-const { loadWebpackConfigs } = require('./webpack');
-const { loadPageConfigs } = require('./pages');
+import webpack from 'webpack';
+import * as path from 'path';
+import * as fs from 'fs';
+import * as os from 'os';
+import { promisify } from 'util';
+import * as React from 'react';
+import * as ReactDOMServer from 'react-dom/server';
+import { CalmlyContext } from './react-context';
+import { loadWebpackConfigs } from './webpack';
+import { loadPageConfigs } from './pages';
 
 const writeFile = promisify(fs.writeFile);
-const readFile = promisify(fs.readFile);
 const mkdtemp = promisify(fs.mkdtemp);
 
-const build = async () => {
+export const build = async () => {
   const cwd = process.cwd();
 
   const webpackConfigs = loadWebpackConfigs({ cwd });
@@ -26,7 +25,7 @@ const build = async () => {
     throw new Error('no entry pages found');
   }
 
-  const htmlEntries = pages.reduce((es, p) => {
+  const htmlEntries = pages.reduce<{ [key: string]: any }>((es, p) => {
     es[p.name] = path.join(pagesRoot, p.relativePath);
     return es;
   }, {});
@@ -44,15 +43,15 @@ const build = async () => {
 
   const htmlManifest = require(path.join(distPath, 'manifest.json'));
 
-  let renderHTML = undefined;
+  let renderHTML: ((dom: any, render: Function) => ResultHTML) | undefined = undefined;
   if (rootPagesConfigExists) {
     const rootConfig = require(path.join(distPath, 'pages.js'));
     renderHTML = rootConfig.renderHTML;
   }
 
-  const jsData = [];
+  const jsData: { name: string; jsPaths: string[] }[] = [];
   const renderResults = pages.map(page => {
-    const render = domTree => {
+    const render = (domTree: any) => {
       const ctxState = { paths: [] };
       const wrappedTree = React.createElement(
         CalmlyContext.Provider,
@@ -97,7 +96,7 @@ const build = async () => {
 
   // TODO: Handle the case there are no client side JS.
   // (If entries is empty webpack throws an error)
-  const entries = jsResults.reduce((es, r) => {
+  const entries = jsResults.reduce<{ [key: string]: any }>((es, r) => {
     if (r.jsFilePath) {
       es[r.name] = r.jsFilePath;
     }
@@ -113,7 +112,7 @@ const build = async () => {
 
   await Promise.all(
     renderResults.map(html => {
-      const jsResult = jsResults.find(r => r.name === html.name());
+      const jsResult = jsResults.find(r => r.name === html.name())!;
 
       if (jsResult.jsFilePath == null) {
         html.replace('scriptTag', '');
@@ -141,7 +140,7 @@ const build = async () => {
   );
 };
 
-const runWebpack = config => {
+const runWebpack = (config: any) => {
   return new Promise((resolve, reject) => {
     const compiler = webpack(config);
     compiler.run((err, stats) => {
@@ -158,10 +157,9 @@ const runWebpack = config => {
 };
 
 class ResultHTML {
-  constructor(name, html) {
-    this._name = name;
-    this._html = html;
-    this._replacements = [];
+  private readonly replacements: { key: string; value: string }[];
+  constructor(private readonly _name: string, private readonly html: string) {
+    this.replacements = [];
   }
 
   name() {
@@ -172,15 +170,14 @@ class ResultHTML {
     return `${this._name}.html`;
   }
 
-  replace(key, value) {
-    this._replacements.push({ key, value });
+  replace(key: string, value: string) {
+    this.replacements.push({ key, value });
   }
 
   toString() {
-    const html = this._replacements.reduce((s, r) => {
+    const html = this.replacements.reduce((s, r) => {
       return s.replace(`<style>#${r.key}{}</style>`, r.value);
-    }, this._html);
+    }, this.html);
     return html;
   }
 }
-module.exports = { build };

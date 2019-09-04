@@ -3,7 +3,7 @@ const {
   usePlaceholder,
   PH_SCRIPT_TAG,
   PH_STYLESHEET_TAG,
-} = require('./src/react-context');
+} = require('./dist/lib/react-context');
 
 module.exports = {
   useClientJS,
