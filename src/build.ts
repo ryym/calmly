@@ -5,9 +5,9 @@ import * as os from 'os';
 import { promisify } from 'util';
 import * as React from 'react';
 import * as ReactDOMServer from 'react-dom/server';
-import { CalmlyContext } from './react-context';
 import { loadWebpackConfigs } from './webpack';
 import { loadPageConfigs } from './pages';
+import { ClientJSRegistry } from './client-js-registry';
 
 const writeFile = promisify(fs.writeFile);
 const mkdtemp = promisify(fs.mkdtemp);
@@ -52,15 +52,10 @@ export const build = async () => {
   const jsData: { name: string; jsPaths: string[] }[] = [];
   const renderResults = pages.map(page => {
     const render = (domTree: any) => {
-      const ctxState = { paths: [] };
-      const wrappedTree = React.createElement(
-        CalmlyContext.Provider,
-        { value: ctxState },
-        domTree
-      );
+      const jsRegistry = new ClientJSRegistry();
+      const wrappedTree = jsRegistry.setupRegistration(domTree);
       const html = ReactDOMServer.renderToStaticMarkup(wrappedTree);
-      jsData.push({ name: page.name, jsPaths: ctxState.paths });
-
+      jsData.push({ name: page.name, jsPaths: jsRegistry.getScriptSources()! });
       return new ResultHTML(page.name, html);
     };
 

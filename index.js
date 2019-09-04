@@ -1,9 +1,9 @@
 const {
-  useClientJS,
   usePlaceholder,
   PH_SCRIPT_TAG,
   PH_STYLESHEET_TAG,
-} = require('./dist/lib/react-context');
+} = require('./dist/lib/placeholder');
+const { useClientJS } = require('./dist/lib/client-js-registry');
 
 module.exports = {
   useClientJS,
