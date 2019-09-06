@@ -48,17 +48,16 @@ export const build = async () => {
 
   const htmlManifest = require(path.join(distPath, 'manifest.json'));
 
-  const jsData: { name: string; jsPaths: string[] }[] = [];
-  const renderResults = routes.map(route => {
+  const pages = routes.map(route => {
     const render = (domTree: any) => {
       const jsRegistry = new ClientJSRegistry();
       const wrappedTree = jsRegistry.setupRegistration(domTree);
       const html = ReactDOMServer.renderToStaticMarkup(wrappedTree);
-      jsData.push({ name: route.name, jsPaths: jsRegistry.getScriptSources()! });
-      return new ResultHTML(route.name, html);
+      const jsPaths = jsRegistry.getScriptFilePaths()!;
+      return new Page(route.name, jsPaths, html);
     };
 
-    let routeConfig = null;
+    let routeConfig: RouteConfig | null = null;
     if (route.configPath) {
       const fullConfigPath = path.join(distPath, route.configPath);
       routeConfig = require(fullConfigPath);
@@ -70,36 +69,12 @@ export const build = async () => {
     return routeConfig ? routeConfig.renderHTML(domTree, render) : render(domTree);
   });
 
-  const tmpDir = await mkdtemp(path.join(os.tmpdir(), 'calmly-'));
-
-  const jsResults = await Promise.all(
-    jsData.map(async r => {
-      let jsFilePath = null;
-
-      if (r.jsPaths.length > 0) {
-        let js = '';
-        r.jsPaths.forEach((originalPath, i) => {
-          js += `import _${i} from '${path.join(cwd, originalPath)}';`;
-        });
-        js += '\n';
-        r.jsPaths.forEach((_path, i) => {
-          js += `_${i}();`;
-        });
-
-        jsFilePath = path.join(tmpDir, `${r.name}.js`);
-        await writeFile(jsFilePath, js);
-      }
-
-      return { name: r.name, jsFilePath, jsName: `${r.name}.js` };
-    })
-  );
+  const clientJSEntryFiles = await writeClientJSEntryFiles(pages, cwd);
 
   // TODO: Handle the case there are no client side JS.
   // (If entries is empty webpack throws an error)
-  const entries = jsResults.reduce<{ [key: string]: any }>((es, r) => {
-    if (r.jsFilePath) {
-      es[r.name] = r.jsFilePath;
-    }
+  const entries = clientJSEntryFiles.reduce<{ [key: string]: string }>((es, r) => {
+    es[r.name] = r.filePath;
     return es;
   }, {});
 
@@ -111,31 +86,31 @@ export const build = async () => {
   const jsManifest = require(path.join(distPath, 'manifest.json'));
 
   await Promise.all(
-    renderResults.map(html => {
-      const jsResult = jsResults.find(r => r.name === html.name())!;
+    pages.map(page => {
+      const clientJSEntry = clientJSEntryFiles.find(r => r.name === page.name);
 
-      if (jsResult.jsFilePath == null) {
-        html.replace('scriptTag', '');
+      if (clientJSEntry == null) {
+        page.replace('scriptTag', '');
       } else {
-        const realPath = jsManifest[jsResult.jsName];
+        const realPath = jsManifest[clientJSEntry.jsName];
         if (realPath == null) {
           throw new Error(
-            `could not find JS file path for ${jsResult.jsName}. Something goes wrong.`
+            `could not find JS file path for ${clientJSEntry.jsName}. Something goes wrong.`
           );
         }
         const scriptTag = `<script src="/${realPath}"></script>`;
-        html.replace('scriptTag', scriptTag);
+        page.replace('scriptTag', scriptTag);
       }
 
-      const cssName = `${html.name()}.css`;
+      const cssName = `${page.name}.css`;
       const cssRealPath = htmlManifest[cssName];
       if (cssRealPath == null) {
-        html.replace('stylesheetTag', '');
+        page.replace('stylesheetTag', '');
       } else {
-        html.replace('stylesheetTag', `<link rel="stylesheet" href="${cssRealPath}" />`);
+        page.replace('stylesheetTag', `<link rel="stylesheet" href="${cssRealPath}" />`);
       }
 
-      return writeFile(path.join(distPath, html.fileName()), html.toString());
+      return writeFile(path.join(distPath, page.fileName()), page.toHTML());
     })
   );
 };
@@ -156,28 +131,65 @@ const runWebpack = (config: any) => {
   });
 };
 
-class ResultHTML {
+class Page {
   private readonly replacements: { key: string; value: string }[];
-  constructor(private readonly _name: string, private readonly html: string) {
+
+  constructor(
+    readonly name: string,
+    readonly clientJsPaths: string[],
+    private readonly html: string
+  ) {
     this.replacements = [];
   }
 
-  name() {
-    return this._name;
-  }
-
   fileName() {
-    return `${this._name}.html`;
+    return `${this.name}.html`;
   }
 
   replace(key: string, value: string) {
     this.replacements.push({ key, value });
   }
 
-  toString() {
+  toHTML() {
     const html = this.replacements.reduce((s, r) => {
       return s.replace(`<style>#${r.key}{}</style>`, r.value);
     }, this.html);
     return html;
   }
+}
+
+export interface RouteConfig {
+  renderHTML(domTree: any, render: (domTree: any) => Page): Page;
+}
+
+const writeClientJSEntryFiles = async (
+  pages: Page[],
+  cwd: string
+): Promise<ClientJSEntryFile[]> => {
+  const tmpDir = await mkdtemp(path.join(os.tmpdir(), 'calmly-'));
+  const jsPages = pages.filter(p => p.clientJsPaths.length > 0);
+
+  return await Promise.all(
+    jsPages.map(async r => {
+      const jsPaths = r.clientJsPaths;
+      let js = '';
+      jsPaths.forEach((originalPath, i) => {
+        js += `import _${i} from '${path.join(cwd, originalPath)}';`;
+      });
+      js += '\n';
+      jsPaths.forEach((_path, i) => {
+        js += `_${i}();`;
+      });
+
+      const filePath = path.join(tmpDir, `${r.name}.js`);
+      await writeFile(filePath, js);
+      return { name: r.name, jsName: `${r.name}.js`, filePath };
+    })
+  );
+};
+
+interface ClientJSEntryFile {
+  readonly name: string;
+  readonly jsName: string;
+  readonly filePath: string;
 }

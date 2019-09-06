@@ -33,7 +33,7 @@ export class ClientJSRegistry {
     return createElement(Context.Provider, { value: registerer }, rootDom);
   }
 
-  getScriptSources(): string[] | null {
+  getScriptFilePaths(): string[] | null {
     return this.setupDone ? this.paths : null;
   }
 }
