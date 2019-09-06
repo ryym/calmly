@@ -9,6 +9,7 @@ import { loadWebpackConfigs } from './webpack';
 import { loadRoutes, Route } from './routes';
 import { ClientJSRegistry } from './client-js-registry';
 import { PH_SCRIPT_TAG, PH_STYLESHEET_TAG } from './placeholder';
+import { PageGroup, PageTemplate } from './page-group';
 
 const writeFile = promisify(fs.writeFile);
 const mkdtemp = promisify(fs.mkdtemp);
@@ -36,36 +37,40 @@ export const build = async () => {
     distPath,
   });
 
-  const pages = await Promise.all(routes.map(route => renderPage(route, distPath)));
+  const pageGroups = await Promise.all(routes.map(route => renderPages(route, distPath)));
 
-  const clientJSEntryFiles = await writeClientJSEntryFiles(pages, cwd);
+  const clientJSEntryFiles = await writeClientJSEntryFiles(pageGroups, cwd);
   const jsManifest = await buildClientJSEntries(clientJSEntryFiles, {
     webpack: webpackConfigs.jsConfig,
     distPath,
   });
 
   await Promise.all(
-    pages.map(page => {
-      const clientJSEntry = clientJSEntryFiles.find(r => r.name === page.name);
+    pageGroups.map(async pg => {
+      const clientJSEntry = clientJSEntryFiles.find(r => r.name === pg.name);
 
       // Replace script tag placeholders.
       if (clientJSEntry == null) {
-        page.replace(PH_SCRIPT_TAG, '');
+        pg.replace(PH_SCRIPT_TAG, '');
       } else {
         const realPath = jsManifest[clientJSEntry.jsName];
         const scriptTag = `<script src="/${realPath}"></script>`;
-        page.replace(PH_SCRIPT_TAG, scriptTag);
+        pg.replace(PH_SCRIPT_TAG, scriptTag);
       }
 
       // Replace stylesheet tag placeholders.
-      const cssName = `${page.name}.css`;
+      const cssName = `${pg.name}.css`;
       const cssRealPath = pageManifest[cssName];
-      page.replace(
+      pg.replace(
         PH_STYLESHEET_TAG,
         cssRealPath == null ? '' : `<link rel="stylesheet" href="${cssRealPath}" />`
       );
 
-      return writeFile(path.join(distPath, page.fileName()), page.toHTML());
+      await Promise.all(
+        pg.renderPages().map(page => {
+          return writeFile(path.join(distPath, `${page.name}.html`), page.html);
+        })
+      );
     })
   );
 };
@@ -86,47 +91,20 @@ const runWebpack = (config: any) => {
   });
 };
 
-class Page {
-  private readonly replacements: { key: string; value: string }[];
-
-  constructor(
-    readonly name: string,
-    readonly clientJsPaths: string[],
-    private readonly html: string
-  ) {
-    this.replacements = [];
-  }
-
-  fileName() {
-    return `${this.name}.html`;
-  }
-
-  replace(key: string, value: string) {
-    this.replacements.push({ key, value });
-  }
-
-  toHTML() {
-    const html = this.replacements.reduce((s, r) => {
-      return s.replace(`<style>#${r.key}{}</style>`, r.value);
-    }, this.html);
-    return html;
-  }
-}
-
-export interface RouteConfig {
-  renderHTML(domTree: any, render: (domTree: any) => Page): Page;
+interface RouteConfig {
+  renderHTML(domTree: any, render: (domTree: any) => PageTemplate): PageTemplate;
 }
 
 const writeClientJSEntryFiles = async (
-  pages: Page[],
+  pageGroups: PageGroup[],
   cwd: string
 ): Promise<ClientJSEntryFile[]> => {
   const tmpDir = await mkdtemp(path.join(os.tmpdir(), 'calmly-'));
-  const jsPages = pages.filter(p => p.clientJsPaths.length > 0);
+  const jsPageGroups = pageGroups.filter(p => p.clientJsPaths.length > 0);
 
   return await Promise.all(
-    jsPages.map(async r => {
-      const jsPaths = r.clientJsPaths;
+    jsPageGroups.map(async pg => {
+      const jsPaths = pg.clientJsPaths;
       let js = '';
       jsPaths.forEach((originalPath, i) => {
         js += `import _${i} from '${path.join(cwd, originalPath)}';`;
@@ -136,9 +114,9 @@ const writeClientJSEntryFiles = async (
         js += `_${i}();`;
       });
 
-      const filePath = path.join(tmpDir, `${r.name}.js`);
+      const filePath = path.join(tmpDir, `${pg.name}.js`);
       await writeFile(filePath, js);
-      return { name: r.name, jsName: `${r.name}.js`, filePath };
+      return { name: pg.name, jsName: `${pg.name}.js`, filePath };
     })
   );
 };
@@ -194,13 +172,13 @@ const buildClientJSEntries = async (
   return require(path.join(config.distPath, 'manifest.json'));
 };
 
-const renderPage = async (route: Route, distPath: string): Promise<Page> => {
+const renderPages = async (route: Route, distPath: string): Promise<PageGroup> => {
   const render = (domTree: any) => {
     const jsRegistry = new ClientJSRegistry();
     const wrappedTree = jsRegistry.setupRegistration(domTree);
     const html = ReactDOMServer.renderToStaticMarkup(wrappedTree);
     const jsPaths = jsRegistry.getScriptFilePaths()!;
-    return new Page(route.name, jsPaths, html);
+    return new PageTemplate(html, jsPaths);
   };
 
   let routeConfig: RouteConfig | null = null;
@@ -212,7 +190,15 @@ const renderPage = async (route: Route, distPath: string): Promise<Page> => {
   const outPath = path.join(distPath, route.filePath);
   const { default: rootComponent, getInitialProps } = require(outPath);
 
+  // if (route.isDynamic()) {
+  // } else {
+  // }
+
   const initialProps = getInitialProps ? await getInitialProps() : null;
   const domTree = React.createElement(rootComponent, initialProps);
-  return routeConfig ? routeConfig.renderHTML(domTree, render) : render(domTree);
+  const template = routeConfig
+    ? routeConfig.renderHTML(domTree, render)
+    : render(domTree);
+
+  return new PageGroup(route.name, [{ name: route.name, template }]);
 };
