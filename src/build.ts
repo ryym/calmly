@@ -6,11 +6,16 @@ import { promisify } from 'util';
 import * as React from 'react';
 import * as ReactDOMServer from 'react-dom/server';
 import { loadWebpackConfigs } from './webpack';
-import { loadPageConfigs } from './pages';
+import { loadRoutes } from './routes';
 import { ClientJSRegistry } from './client-js-registry';
 
 const writeFile = promisify(fs.writeFile);
 const mkdtemp = promisify(fs.mkdtemp);
+
+const stripExtension = (filePath: string): string => {
+  // TODO: Support other extensions.
+  return filePath.replace(/\.js$/, '');
+};
 
 export const build = async () => {
   const cwd = process.cwd();
@@ -19,22 +24,22 @@ export const build = async () => {
   const distPath = webpackConfigs.htmlConfig.output.path;
 
   const pagesRoot = path.join(cwd, 'src', 'pages');
-  const pages = await loadPageConfigs(pagesRoot);
+  const routes = await loadRoutes(pagesRoot);
 
-  if (pages.length === 0) {
+  if (routes.length === 0) {
     throw new Error('no entry pages found');
   }
 
-  const htmlEntries = pages.reduce<{ [key: string]: any }>((es, p) => {
-    es[p.name] = path.join(pagesRoot, p.relativePath);
+  const htmlEntries = routes.reduce<{ [key: string]: any }>((es, r) => {
+    es[r.name] = path.join(pagesRoot, r.filePath);
+    if (r.configPath != null) {
+      const entryName = stripExtension(r.configPath);
+      if (es[entryName] == null) {
+        es[entryName] = path.join(pagesRoot, r.configPath);
+      }
+    }
     return es;
   }, {});
-
-  const rootPagesConfigPath = path.join(cwd, 'src', 'pages.js');
-  const rootPagesConfigExists = fs.existsSync(rootPagesConfigPath);
-  if (rootPagesConfigExists) {
-    htmlEntries.pages = rootPagesConfigPath;
-  }
 
   await runWebpack({
     ...webpackConfigs.htmlConfig,
@@ -43,26 +48,26 @@ export const build = async () => {
 
   const htmlManifest = require(path.join(distPath, 'manifest.json'));
 
-  let renderHTML: ((dom: any, render: Function) => ResultHTML) | undefined = undefined;
-  if (rootPagesConfigExists) {
-    const rootConfig = require(path.join(distPath, 'pages.js'));
-    renderHTML = rootConfig.renderHTML;
-  }
-
   const jsData: { name: string; jsPaths: string[] }[] = [];
-  const renderResults = pages.map(page => {
+  const renderResults = routes.map(route => {
     const render = (domTree: any) => {
       const jsRegistry = new ClientJSRegistry();
       const wrappedTree = jsRegistry.setupRegistration(domTree);
       const html = ReactDOMServer.renderToStaticMarkup(wrappedTree);
-      jsData.push({ name: page.name, jsPaths: jsRegistry.getScriptSources()! });
-      return new ResultHTML(page.name, html);
+      jsData.push({ name: route.name, jsPaths: jsRegistry.getScriptSources()! });
+      return new ResultHTML(route.name, html);
     };
 
-    const outPath = path.join(distPath, page.relativePath);
+    let routeConfig = null;
+    if (route.configPath) {
+      const fullConfigPath = path.join(distPath, route.configPath);
+      routeConfig = require(fullConfigPath);
+    }
+
+    const outPath = path.join(distPath, route.filePath);
     const rootComponent = require(outPath).default;
     const domTree = React.createElement(rootComponent, null);
-    return renderHTML ? renderHTML(domTree, render) : render(domTree);
+    return routeConfig ? routeConfig.renderHTML(domTree, render) : render(domTree);
   });
 
   const tmpDir = await mkdtemp(path.join(os.tmpdir(), 'calmly-'));
