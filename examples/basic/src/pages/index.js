@@ -17,4 +17,8 @@ const Index = ({ builtAt }) => {
   );
 };
 
-export default () => <Index builtAt={new Date()} />;
+export default Index;
+
+export const getInitialProps = () => {
+  return { builtAt: new Date() };
+};

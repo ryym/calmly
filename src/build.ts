@@ -36,7 +36,7 @@ export const build = async () => {
     distPath,
   });
 
-  const pages = routes.map(route => renderPage(route, distPath));
+  const pages = await Promise.all(routes.map(route => renderPage(route, distPath)));
 
   const clientJSEntryFiles = await writeClientJSEntryFiles(pages, cwd);
   const jsManifest = await buildClientJSEntries(clientJSEntryFiles, {
@@ -194,7 +194,7 @@ const buildClientJSEntries = async (
   return require(path.join(config.distPath, 'manifest.json'));
 };
 
-const renderPage = (route: Route, distPath: string): Page => {
+const renderPage = async (route: Route, distPath: string): Promise<Page> => {
   const render = (domTree: any) => {
     const jsRegistry = new ClientJSRegistry();
     const wrappedTree = jsRegistry.setupRegistration(domTree);
@@ -210,7 +210,9 @@ const renderPage = (route: Route, distPath: string): Page => {
   }
 
   const outPath = path.join(distPath, route.filePath);
-  const rootComponent = require(outPath).default;
-  const domTree = React.createElement(rootComponent, null);
+  const { default: rootComponent, getInitialProps } = require(outPath);
+
+  const initialProps = getInitialProps ? await getInitialProps() : null;
+  const domTree = React.createElement(rootComponent, initialProps);
   return routeConfig ? routeConfig.renderHTML(domTree, render) : render(domTree);
 };
