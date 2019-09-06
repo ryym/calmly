@@ -8,7 +8,5 @@
     - We can achieve this by providing a unique id via `useClientJS`.
 - [ ] Enable to define clean-up function for each client side JS.
     - Let's learn about Mutation Observer.
-- [ ] Support nested path for pages definition.
-- [ ] Consider the way to let users customize our default webpack config.
 - [ ] Provide CLI.
 - [ ] More documentation.
