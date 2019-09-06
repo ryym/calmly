@@ -6,8 +6,9 @@ import { promisify } from 'util';
 import * as React from 'react';
 import * as ReactDOMServer from 'react-dom/server';
 import { loadWebpackConfigs } from './webpack';
-import { loadRoutes } from './routes';
+import { loadRoutes, Route } from './routes';
 import { ClientJSRegistry } from './client-js-registry';
+import { PH_SCRIPT_TAG, PH_STYLESHEET_TAG } from './placeholder';
 
 const writeFile = promisify(fs.writeFile);
 const mkdtemp = promisify(fs.mkdtemp);
@@ -23,92 +24,46 @@ export const build = async () => {
   const webpackConfigs = loadWebpackConfigs({ cwd });
   const distPath = webpackConfigs.htmlConfig.output.path;
 
-  const pagesRoot = path.join(cwd, 'src', 'pages');
-  const routes = await loadRoutes(pagesRoot);
+  const routesRoot = path.join(cwd, 'src', 'pages');
+  const routes = await loadRoutes(routesRoot);
 
   if (routes.length === 0) {
     throw new Error('no entry pages found');
   }
 
-  const htmlEntries = routes.reduce<{ [key: string]: any }>((es, r) => {
-    es[r.name] = path.join(pagesRoot, r.filePath);
-    if (r.configPath != null) {
-      const entryName = stripExtension(r.configPath);
-      if (es[entryName] == null) {
-        es[entryName] = path.join(pagesRoot, r.configPath);
-      }
-    }
-    return es;
-  }, {});
-
-  await runWebpack({
-    ...webpackConfigs.htmlConfig,
-    entry: htmlEntries,
+  const pageManifest = await buildPageEntries(routesRoot, routes, {
+    webpack: webpackConfigs.htmlConfig,
+    distPath,
   });
 
-  const htmlManifest = require(path.join(distPath, 'manifest.json'));
-
-  const pages = routes.map(route => {
-    const render = (domTree: any) => {
-      const jsRegistry = new ClientJSRegistry();
-      const wrappedTree = jsRegistry.setupRegistration(domTree);
-      const html = ReactDOMServer.renderToStaticMarkup(wrappedTree);
-      const jsPaths = jsRegistry.getScriptFilePaths()!;
-      return new Page(route.name, jsPaths, html);
-    };
-
-    let routeConfig: RouteConfig | null = null;
-    if (route.configPath) {
-      const fullConfigPath = path.join(distPath, route.configPath);
-      routeConfig = require(fullConfigPath);
-    }
-
-    const outPath = path.join(distPath, route.filePath);
-    const rootComponent = require(outPath).default;
-    const domTree = React.createElement(rootComponent, null);
-    return routeConfig ? routeConfig.renderHTML(domTree, render) : render(domTree);
-  });
+  const pages = routes.map(route => renderPage(route, distPath));
 
   const clientJSEntryFiles = await writeClientJSEntryFiles(pages, cwd);
-
-  // TODO: Handle the case there are no client side JS.
-  // (If entries is empty webpack throws an error)
-  const entries = clientJSEntryFiles.reduce<{ [key: string]: string }>((es, r) => {
-    es[r.name] = r.filePath;
-    return es;
-  }, {});
-
-  await runWebpack({
-    entry: entries,
-    ...webpackConfigs.jsConfig,
+  const jsManifest = await buildClientJSEntries(clientJSEntryFiles, {
+    webpack: webpackConfigs.jsConfig,
+    distPath,
   });
-
-  const jsManifest = require(path.join(distPath, 'manifest.json'));
 
   await Promise.all(
     pages.map(page => {
       const clientJSEntry = clientJSEntryFiles.find(r => r.name === page.name);
 
+      // Replace script tag placeholders.
       if (clientJSEntry == null) {
-        page.replace('scriptTag', '');
+        page.replace(PH_SCRIPT_TAG, '');
       } else {
         const realPath = jsManifest[clientJSEntry.jsName];
-        if (realPath == null) {
-          throw new Error(
-            `could not find JS file path for ${clientJSEntry.jsName}. Something goes wrong.`
-          );
-        }
         const scriptTag = `<script src="/${realPath}"></script>`;
-        page.replace('scriptTag', scriptTag);
+        page.replace(PH_SCRIPT_TAG, scriptTag);
       }
 
+      // Replace stylesheet tag placeholders.
       const cssName = `${page.name}.css`;
-      const cssRealPath = htmlManifest[cssName];
-      if (cssRealPath == null) {
-        page.replace('stylesheetTag', '');
-      } else {
-        page.replace('stylesheetTag', `<link rel="stylesheet" href="${cssRealPath}" />`);
-      }
+      const cssRealPath = pageManifest[cssName];
+      page.replace(
+        PH_STYLESHEET_TAG,
+        cssRealPath == null ? '' : `<link rel="stylesheet" href="${cssRealPath}" />`
+      );
 
       return writeFile(path.join(distPath, page.fileName()), page.toHTML());
     })
@@ -193,3 +148,69 @@ interface ClientJSEntryFile {
   readonly jsName: string;
   readonly filePath: string;
 }
+
+interface BuildConfig {
+  readonly distPath: string;
+  readonly webpack: object;
+}
+
+type WebpackManifest = {
+  readonly [path: string]: string;
+};
+
+const buildPageEntries = async (
+  routesRoot: string,
+  routes: Route[],
+  config: BuildConfig
+): Promise<WebpackManifest> => {
+  const htmlEntries = routes.reduce<{ [key: string]: any }>((es, r) => {
+    es[r.name] = path.join(routesRoot, r.filePath);
+    if (r.configPath != null) {
+      const entryName = stripExtension(r.configPath);
+      if (es[entryName] == null) {
+        es[entryName] = path.join(routesRoot, r.configPath);
+      }
+    }
+    return es;
+  }, {});
+
+  await runWebpack({ ...config.webpack, entry: htmlEntries });
+  return require(path.join(config.distPath, 'manifest.json'));
+};
+
+const buildClientJSEntries = async (
+  clientJSEntryFiles: ClientJSEntryFile[],
+  config: BuildConfig
+): Promise<WebpackManifest> => {
+  if (clientJSEntryFiles.length === 0) {
+    return {};
+  }
+
+  const entries = clientJSEntryFiles.reduce<{ [key: string]: string }>((es, r) => {
+    es[r.name] = r.filePath;
+    return es;
+  }, {});
+  await runWebpack({ ...config.webpack, entry: entries });
+  return require(path.join(config.distPath, 'manifest.json'));
+};
+
+const renderPage = (route: Route, distPath: string): Page => {
+  const render = (domTree: any) => {
+    const jsRegistry = new ClientJSRegistry();
+    const wrappedTree = jsRegistry.setupRegistration(domTree);
+    const html = ReactDOMServer.renderToStaticMarkup(wrappedTree);
+    const jsPaths = jsRegistry.getScriptFilePaths()!;
+    return new Page(route.name, jsPaths, html);
+  };
+
+  let routeConfig: RouteConfig | null = null;
+  if (route.configPath) {
+    const fullConfigPath = path.join(distPath, route.configPath);
+    routeConfig = require(fullConfigPath);
+  }
+
+  const outPath = path.join(distPath, route.filePath);
+  const rootComponent = require(outPath).default;
+  const domTree = React.createElement(rootComponent, null);
+  return routeConfig ? routeConfig.renderHTML(domTree, render) : render(domTree);
+};
