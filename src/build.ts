@@ -188,17 +188,31 @@ const renderPages = async (route: Route, distPath: string): Promise<PageGroup> =
   }
 
   const outPath = path.join(distPath, route.filePath);
-  const { default: rootComponent, getInitialProps } = require(outPath);
+  const { default: rootComponent, ...componentConfig } = require(outPath);
 
-  // if (route.isDynamic()) {
-  // } else {
-  // }
+  if (route.isDynamic()) {
+    const { getInitialPropsMap } = componentConfig;
+    if (getInitialPropsMap == null) {
+      throw new Error('dynamic page must be export getInitialPropsMap');
+    }
+    // TODO: Consider the case where propsMap is empty.
+    const propsMap: Map<unknown, object> = await getInitialPropsMap();
+    const templates = Array.from(propsMap.entries()).map(([name, props]) => {
+      const domTree = React.createElement(rootComponent, props);
+      const template = routeConfig
+        ? routeConfig.renderHTML(domTree, render)
+        : render(domTree);
+      return { name: path.join(route.dirName(), String(name)), template };
+    });
+    return new PageGroup(route.name, templates);
+  } else {
+    const { getInitialProps } = componentConfig;
+    const initialProps = getInitialProps ? await getInitialProps() : null;
+    const domTree = React.createElement(rootComponent, initialProps);
+    const template = routeConfig
+      ? routeConfig.renderHTML(domTree, render)
+      : render(domTree);
 
-  const initialProps = getInitialProps ? await getInitialProps() : null;
-  const domTree = React.createElement(rootComponent, initialProps);
-  const template = routeConfig
-    ? routeConfig.renderHTML(domTree, render)
-    : render(domTree);
-
-  return new PageGroup(route.name, [{ name: route.name, template }]);
+    return new PageGroup(route.name, [{ name: route.name, template }]);
+  }
 };

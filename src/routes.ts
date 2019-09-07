@@ -14,6 +14,18 @@ export class Route {
     this.name = filePath.slice(1).replace(/\.js$/, '');
     this.configPath = configPath;
   }
+
+  isDynamic(): boolean {
+    return this.fileName().startsWith('_');
+  }
+
+  fileName(): string {
+    return path.basename(this.name);
+  }
+
+  dirName(): string {
+    return path.dirname(this.name);
+  }
 }
 
 export interface RouteArgs {
