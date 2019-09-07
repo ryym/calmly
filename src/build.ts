@@ -13,6 +13,7 @@ import { PageGroup, PageTemplate } from './page-group';
 
 const writeFile = promisify(fs.writeFile);
 const mkdtemp = promisify(fs.mkdtemp);
+const removeFile = promisify(fs.unlink);
 
 const stripExtension = (filePath: string): string => {
   // TODO: Support other extensions.
@@ -73,6 +74,8 @@ export const build = async () => {
       );
     })
   );
+
+  await removeComponentFiles(distPath, routes);
 };
 
 const runWebpack = (config: any) => {
@@ -215,4 +218,20 @@ const renderPages = async (route: Route, distPath: string): Promise<PageGroup> =
 
     return new PageGroup(route.name, [{ name: route.name, template }]);
   }
+};
+
+const removeComponentFiles = async (distPath: string, routes: Route[]) => {
+  const uniqueConfigPaths = routes.reduce<Set<string>>((paths, route) => {
+    if (route.configPath != null) {
+      paths.add(route.configPath);
+    }
+    return paths;
+  }, new Set());
+
+  return Promise.all([
+    ...Array.from(uniqueConfigPaths).map(configPath =>
+      removeFile(path.join(distPath, configPath))
+    ),
+    ...routes.map(route => removeFile(path.join(distPath, route.filePath))),
+  ]);
 };
