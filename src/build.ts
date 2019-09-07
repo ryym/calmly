@@ -12,6 +12,7 @@ import { PH_SCRIPT_TAG, PH_STYLESHEET_TAG } from './placeholder';
 import { PageGroup, PageTemplate } from './page-group';
 
 const writeFile = promisify(fs.writeFile);
+const mkdir = promisify(fs.mkdir);
 const mkdtemp = promisify(fs.mkdtemp);
 const removeFile = promisify(fs.unlink);
 
@@ -68,8 +69,13 @@ export const build = async () => {
       );
 
       await Promise.all(
-        pg.renderPages().map(page => {
-          return writeFile(path.join(distPath, `${page.name}.html`), page.html);
+        pg.renderPages().map(async page => {
+          if (page.name.endsWith('index')) {
+            await writeFile(path.join(distPath, `${page.name}.html`), page.html);
+          } else {
+            await mkdir(path.join(distPath, page.name));
+            await writeFile(path.join(distPath, page.name, 'index.html'), page.html);
+          }
         })
       );
     })
