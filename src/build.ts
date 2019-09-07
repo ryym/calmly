@@ -187,7 +187,7 @@ const renderPages = async (route: Route, distPath: string): Promise<PageGroup> =
     const wrappedTree = jsRegistry.setupRegistration(domTree);
     const html = ReactDOMServer.renderToStaticMarkup(wrappedTree);
     const jsPaths = jsRegistry.getScriptFilePaths()!;
-    return new PageTemplate(html, jsPaths);
+    return new PageTemplate(`<!DOCTYPE html>${html}`, jsPaths);
   };
 
   let routeConfig: RouteConfig | null = null;
