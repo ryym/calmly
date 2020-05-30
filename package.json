@@ -10,9 +10,11 @@
     "src"
   ],
   "scripts": {
-    "start": "npx tsc --watch",
+    "build": "npx tsc",
+    "build:w": "npx tsc --watch",
     "test": "npx jest --ci",
-    "test:w": "npx jest --watch"
+    "test:w": "npx jest --watch",
+    "test:wi": "node --inspect-brk node_modules/.bin/jest --runInBand --watch --testTimeout 100000"
   },
   "devDependencies": {
     "@babel/core": "^7.10.1",
