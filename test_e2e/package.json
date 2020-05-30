@@ -1,0 +1,8 @@
+{
+  "name": "calmly-test_e2e",
+  "private": true,
+  "//": [
+    "Run 'yarn link calmly' before running E2E tests",
+    "I don't know why but it is necessary to avoid storange React Context behavior"
+  ]
+}

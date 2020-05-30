@@ -46,10 +46,10 @@ const spawn = (cmd: string, args: string[]): Promise<void> => {
   return new Promise((resolve, reject) => {
     const p = childProcess.spawn(cmd, args);
     p.stdout.on('data', (data) => {
-      console.log(data);
+      console.log(String(data));
     });
     p.stderr.on('data', (data) => {
-      console.error(data);
+      console.error(String(data));
     });
     p.on('close', (code) => {
       code === 0 ? resolve() : reject();
