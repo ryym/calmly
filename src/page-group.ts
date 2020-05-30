@@ -11,11 +11,11 @@ export class PageGroup {
   }
 
   replace(key: string, value: string) {
-    this.templates.forEach(t => t.template.replace(key, value));
+    this.templates.forEach((t) => t.template.replace(key, value));
   }
 
   renderPages(): Page[] {
-    return this.templates.map(t => {
+    return this.templates.map((t) => {
       const html = t.template.render();
       return { name: t.name, html };
     });

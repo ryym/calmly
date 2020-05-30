@@ -114,9 +114,7 @@ const mergeClientJSConfig = (defaults: any, custom: any, htmlConfig: any) => {
 
   if (custom.output) {
     if (custom.output.path !== htmlConfig.output.path) {
-      throw new Error(
-        '[webpackForClientJS]: output.path must be same with HTML webpack config'
-      );
+      throw new Error('[webpackForClientJS]: output.path must be same with HTML webpack config');
     }
   }
 

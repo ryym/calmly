@@ -58,7 +58,7 @@ const _loadRoutes = async (
 
   const files = await readdir(parentPath);
   const fileLists = await Promise.all(
-    files.map(async name => {
+    files.map(async (name) => {
       const fullPath = path.join(parentPath, name);
       const stat = await fileStat(fullPath);
       const filePath = `${parent}/${name}`;

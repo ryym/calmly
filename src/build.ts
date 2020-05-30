@@ -43,7 +43,7 @@ export const build = async (opts: BuildOptions = {}) => {
     distPath,
   });
 
-  const pageGroups = await Promise.all(routes.map(route => renderPages(route, distPath)));
+  const pageGroups = await Promise.all(routes.map((route) => renderPages(route, distPath)));
 
   const clientJSEntryFiles = await writeClientJSEntryFiles(pageGroups, cwd);
   const jsManifest = await buildClientJSEntries(clientJSEntryFiles, {
@@ -52,8 +52,8 @@ export const build = async (opts: BuildOptions = {}) => {
   });
 
   await Promise.all(
-    pageGroups.map(async pg => {
-      const clientJSEntry = clientJSEntryFiles.find(r => r.name === pg.name);
+    pageGroups.map(async (pg) => {
+      const clientJSEntry = clientJSEntryFiles.find((r) => r.name === pg.name);
 
       // Replace script tag placeholders.
       if (clientJSEntry == null) {
@@ -73,7 +73,7 @@ export const build = async (opts: BuildOptions = {}) => {
       );
 
       await Promise.all(
-        pg.renderPages().map(async page => {
+        pg.renderPages().map(async (page) => {
           if (page.name.endsWith('index')) {
             await writeFile(path.join(distPath, `${page.name}.html`), page.html);
           } else {
@@ -116,10 +116,10 @@ const writeClientJSEntryFiles = async (
   cwd: string
 ): Promise<ClientJSEntryFile[]> => {
   const tmpDir = await mkdtemp(path.join(os.tmpdir(), 'calmly-'));
-  const jsPageGroups = pageGroups.filter(p => p.clientJsPaths.length > 0);
+  const jsPageGroups = pageGroups.filter((p) => p.clientJsPaths.length > 0);
 
   return await Promise.all(
-    jsPageGroups.map(async pg => {
+    jsPageGroups.map(async (pg) => {
       const jsPaths = pg.clientJsPaths;
       let js = '';
       jsPaths.forEach((originalPath, i) => {
@@ -215,9 +215,7 @@ const renderPages = async (route: Route, distPath: string): Promise<PageGroup> =
     const propsMap: Map<unknown, object> = await getInitialPropsMap();
     const templates = Array.from(propsMap.entries()).map(([name, props]) => {
       const domTree = React.createElement(rootComponent, props);
-      const template = routeConfig
-        ? routeConfig.renderHTML(domTree, render)
-        : render(domTree);
+      const template = routeConfig ? routeConfig.renderHTML(domTree, render) : render(domTree);
       return { name: path.join(route.dirName(), String(name)), template };
     });
     return new PageGroup(route.name, templates);
@@ -225,9 +223,7 @@ const renderPages = async (route: Route, distPath: string): Promise<PageGroup> =
     const { getInitialProps } = componentConfig;
     const initialProps = getInitialProps ? await getInitialProps() : null;
     const domTree = React.createElement(rootComponent, initialProps);
-    const template = routeConfig
-      ? routeConfig.renderHTML(domTree, render)
-      : render(domTree);
+    const template = routeConfig ? routeConfig.renderHTML(domTree, render) : render(domTree);
 
     return new PageGroup(route.name, [{ name: route.name, template }]);
   }
@@ -242,9 +238,9 @@ const removeComponentFiles = async (distPath: string, routes: Route[]) => {
   }, new Set());
 
   return Promise.all([
-    ...Array.from(uniqueConfigPaths).map(configPath =>
+    ...Array.from(uniqueConfigPaths).map((configPath) =>
       removeFile(path.join(distPath, configPath))
     ),
-    ...routes.map(route => removeFile(path.join(distPath, route.filePath))),
+    ...routes.map((route) => removeFile(path.join(distPath, route.filePath))),
   ]);
 };
