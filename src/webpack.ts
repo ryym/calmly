@@ -33,7 +33,7 @@ export const loadWebpackConfigs = ({ cwd }: { cwd: string }): CalmlyConfig => {
 
 const defaultHTMLWebpackConfig = (cwd: string) => {
   const pkgJsonPath = path.join(cwd, 'package.json');
-  let externals = ['calmly'];
+  let externals = ['calmly', 'react'];
   if (fs.existsSync(pkgJsonPath)) {
     const packageJson = require(path.join(cwd, 'package.json'));
     const deps = Object.keys(packageJson.dependencies);
