@@ -38,3 +38,30 @@ Object {
   "index.js": "index.js",
 }
 `;
+
+exports[`E2E multiple_pages: about/index.html 1`] = `
+"<!DOCTYPE html>
+<body>
+  <h1>About</h1>
+  <p>This is about page</p>
+  <a href=\\"/\\">Home</a>
+</body>
+"
+`;
+
+exports[`E2E multiple_pages: index.html 1`] = `
+"<!DOCTYPE html>
+<body>
+  <h1>Welcome</h1>
+  <p>This is welcome page</p>
+  <a href=\\"/about\\">About</a>
+</body>
+"
+`;
+
+exports[`E2E multiple_pages: manifest.json 1`] = `
+Object {
+  "about.js": "about.js",
+  "index.js": "index.js",
+}
+`;
