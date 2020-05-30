@@ -14,3 +14,27 @@ Object {
   "index.js": "index.js",
 }
 `;
+
+exports[`E2E helloworld_with_js: index.client.js 1`] = `"index.client.js"`;
+
+exports[`E2E helloworld_with_js: index.html 1`] = `
+"<!DOCTYPE html>
+<body>
+  <h1 id=\\"hello\\">Hello</h1>
+  <div>content</div>
+  <script src=\\"/index.client.js\\"></script>
+</body>
+"
+`;
+
+exports[`E2E helloworld_with_js: js.manifest.json 1`] = `
+Object {
+  "index.client.js": "index.client.js",
+}
+`;
+
+exports[`E2E helloworld_with_js: manifest.json 1`] = `
+Object {
+  "index.js": "index.js",
+}
+`;
