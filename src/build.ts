@@ -21,8 +21,12 @@ const stripExtension = (filePath: string): string => {
   return filePath.replace(/\.js$/, '');
 };
 
-export const build = async () => {
-  const cwd = process.cwd();
+export interface BuildOptions {
+  readonly cwd?: string;
+}
+
+export const build = async (opts: BuildOptions = {}) => {
+  const cwd = opts.cwd || process.cwd();
 
   const webpackConfigs = loadWebpackConfigs({ cwd });
   const distPath = webpackConfigs.htmlConfig.output.path;
