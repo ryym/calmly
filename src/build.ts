@@ -28,6 +28,11 @@ export interface BuildOptions {
 export const build = async (opts: BuildOptions = {}) => {
   const cwd = opts.cwd || process.cwd();
 
+  if (!path.isAbsolute(cwd)) {
+    // This is because we need to 'require()' the config file using the cwd.
+    throw new Error('cwd must be absolute path');
+  }
+
   const webpackConfigs = loadWebpackConfigs({ cwd });
   const distPath = webpackConfigs.htmlConfig.output.path;
 
