@@ -118,6 +118,10 @@ const mergeClientJSConfig = (defaults: any, custom: any, htmlConfig: any) => {
     }
   }
 
+  if (custom.mode == null) {
+    custom.mode = defaults.mode;
+  }
+
   // TODO: What if a user uses webpack-manifest-plugin already?
   custom.plugins = [...(custom.plugins || []), ...defaults.plugins];
 
