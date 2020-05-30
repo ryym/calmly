@@ -77,7 +77,10 @@ export const build = async (opts: BuildOptions = {}) => {
           if (page.name.endsWith('index')) {
             await writeFile(path.join(distPath, `${page.name}.html`), page.html);
           } else {
-            await mkdir(path.join(distPath, page.name));
+            const pageDirPath = path.join(distPath, page.name);
+            if (!fs.existsSync(pageDirPath)) {
+              await mkdir(pageDirPath);
+            }
             await writeFile(path.join(distPath, page.name, 'index.html'), page.html);
           }
         })
