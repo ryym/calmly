@@ -74,25 +74,34 @@ describe('E2E', () => {
 
       const distFiles = await readdirRec(distPath);
       for (let filePath of distFiles) {
-        const content = await readFile(path.join(distPath, filePath));
-        const ext = path.extname(filePath);
-        switch (ext) {
-          case '.html': {
-            const html = prettier.format(String(content), { parser: 'html' });
-            expect(html).toMatchSnapshot(filePath);
-            break;
-          }
-
-          case '.json': {
-            const json = JSON.parse(String(content));
-            expect(json).toMatchSnapshot(filePath);
-            break;
-          }
-
-          default:
-            throw new Error(`unexpected file extension: ${ext}`);
-        }
+        const snapshot = await makeSnapshot(distPath, filePath);
+        expect(snapshot).toMatchSnapshot(filePath);
       }
     });
   }
 });
+
+const makeSnapshot = async (dir: string, filePath: string): Promise<any> => {
+  if (filePath.endsWith('.client.js')) {
+    return filePath;
+  }
+
+  const content = await readFile(path.join(dir, filePath));
+  const ext = path.extname(filePath);
+  switch (ext) {
+    case '.html': {
+      return prettier.format(String(content), { parser: 'html' });
+    }
+
+    case '.json': {
+      return JSON.parse(String(content));
+    }
+
+    case '.js': {
+      return prettier.format(String(content), { parser: 'babel' });
+    }
+
+    default:
+      throw new Error(`unexpected file extension: ${ext}`);
+  }
+};
