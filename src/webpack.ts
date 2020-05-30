@@ -40,7 +40,7 @@ const defaultHTMLWebpackConfig = (cwd: string) => {
     externals = [...externals, ...deps];
   }
   return {
-    mode: process.env.NODE_ENV,
+    mode: process.env.NODE_ENV === 'production' ? 'production' : 'development',
     output: {
       path: path.join(cwd, 'dist'),
       libraryTarget: 'commonjs2',
@@ -92,7 +92,7 @@ const mergeHTMLConfig = (defaults: any, custom: any) => {
 
 const defaultClientJSWebpackConfig = (cwd: string) => {
   return {
-    mode: process.env.NODE_ENV,
+    mode: process.env.NODE_ENV === 'production' ? 'production' : 'development',
     // entry must be set dynamically.
     output: {
       path: path.join(cwd, 'dist'),
