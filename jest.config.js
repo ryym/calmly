@@ -9,4 +9,5 @@ module.exports = {
     // We run webpack in E2E test and babel-loader loads json file by 'require'.
     'json',
   ],
+  watchPathIgnorePatterns: ['/dist/'],
 };
