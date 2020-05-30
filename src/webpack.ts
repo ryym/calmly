@@ -97,7 +97,7 @@ const defaultClientJSWebpackConfig = (cwd: string) => {
     output: {
       path: path.join(cwd, 'dist'),
     },
-    plugins: [new WebpackManifestPlugin()],
+    plugins: [new WebpackManifestPlugin({ fileName: 'js.manifest.json' })],
   };
 };
 

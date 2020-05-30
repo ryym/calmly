@@ -58,7 +58,7 @@ export const build = async (opts: BuildOptions = {}) => {
 
   await Promise.all(
     pageGroups.map(async (pg) => {
-      const clientJSEntry = clientJSEntryFiles.find((r) => r.name === pg.name);
+      const clientJSEntry = clientJSEntryFiles.find((r) => r.pageName === pg.name);
 
       // Replace script tag placeholders.
       if (clientJSEntry == null) {
@@ -135,15 +135,18 @@ const writeClientJSEntryFiles = async (
         js += `_${i}();`;
       });
 
-      const filePath = path.join(tmpDir, `${pg.name}.js`);
+      const entryName = `${pg.name}.client`;
+      const jsName = `${pg.name}.client.js`;
+      const filePath = path.join(tmpDir, jsName);
       await writeFile(filePath, js);
-      return { name: pg.name, jsName: `${pg.name}.js`, filePath };
+      return { pageName: pg.name, entryName, jsName, filePath };
     })
   );
 };
 
 interface ClientJSEntryFile {
-  readonly name: string;
+  readonly pageName: string;
+  readonly entryName: string;
   readonly jsName: string;
   readonly filePath: string;
 }
@@ -186,11 +189,11 @@ const buildClientJSEntries = async (
   }
 
   const entries = clientJSEntryFiles.reduce<{ [key: string]: string }>((es, r) => {
-    es[r.name] = r.filePath;
+    es[r.entryName] = r.filePath;
     return es;
   }, {});
   await runWebpack({ ...config.webpack, entry: entries });
-  return require(path.join(config.distPath, 'manifest.json'));
+  return require(path.join(config.distPath, 'js.manifest.json'));
 };
 
 const renderPages = async (route: Route, distPath: string): Promise<PageGroup> => {
