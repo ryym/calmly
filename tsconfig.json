@@ -1,19 +1,16 @@
 {
   "compilerOptions": {
     "target": "es6",
-    "module":"commonjs",
+    "module": "commonjs",
     "moduleResolution": "node",
     "sourceMap": false,
     "outDir": "dist/lib",
     "jsx": "react",
     "allowJs": true,
     "strict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
     "noImplicitReturns": true,
     "esModuleInterop": true
   },
   "include": ["src"],
   "exclude": ["**/*_test.ts"]
 }
-
