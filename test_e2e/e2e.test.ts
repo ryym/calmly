@@ -8,6 +8,7 @@ const readDir = promisify(fs.readdir);
 const fileStat = promisify(fs.stat);
 const readFile = promisify(fs.readFile);
 const removeFile = promisify(fs.unlink);
+const removeDir = promisify(fs.rmdir);
 
 // This excludes directories.
 const readdirRec = async (root: string, intermediate = ''): Promise<string[]> => {
@@ -25,6 +26,20 @@ const readdirRec = async (root: string, intermediate = ''): Promise<string[]> =>
     }
   }
   return allFiles;
+};
+
+const rmdirRec = async (dirPath: string) => {
+  const fileNames = await readDir(dirPath);
+  for (let name of fileNames) {
+    const filePath = path.join(dirPath, name);
+    const stat = await fileStat(filePath);
+    if (stat.isDirectory()) {
+      await rmdirRec(filePath);
+    } else {
+      await removeFile(filePath);
+    }
+  }
+  await removeDir(dirPath);
 };
 
 const spawn = (cmd: string, args: string[]): Promise<void> => {
@@ -50,10 +65,13 @@ describe('E2E', () => {
   for (let testDirName of testDirs) {
     it(testDirName, async () => {
       const testDirPath = path.join(e2eDir, testDirName);
+      const distPath = path.join(testDirPath, 'dist');
 
+      if (fs.existsSync(distPath)) {
+        await rmdirRec(path.join(testDirPath, 'dist'));
+      }
       await spawn('node', [runnerPath, testDirPath]);
 
-      const distPath = path.join(testDirPath, 'dist');
       const distFiles = await readdirRec(distPath);
       for (let filePath of distFiles) {
         const content = await readFile(path.join(distPath, filePath));
