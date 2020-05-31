@@ -1,5 +1,16 @@
 import cheerio from 'cheerio';
-import { Placeholder, PlaceholderResolver } from './placeholder';
+import {
+  Placeholder,
+  PlaceholderResolver,
+  bundleStylesheetResolver,
+  bundleScriptResolver,
+} from './placeholder';
+import { ClientJS } from './client-js-registry';
+
+export interface RenderingContext {
+  readonly bundleJSPath?: string;
+  readonly bundleCSSPath?: string;
+}
 
 export class PageGroup {
   constructor(readonly name: string, private readonly templates: NamedPageTemplate[]) {
@@ -8,19 +19,20 @@ export class PageGroup {
     }
   }
 
-  get clientJsPaths(): string[] {
+  getClientJSPaths(): string[] {
     // All templates shares same client scripts.
-    return this.templates[0].template.clientJsPaths;
+    return this.templates[0].template.clientJSs.map((c) => c.filePath);
   }
 
-  resolvePlaceholder<T = {}>(resolver: PlaceholderResolver<T>): void {
-    this.templates.forEach((t) => t.template.resolvePlaceholder(resolver));
-  }
+  renderPages(ctx: RenderingContext): Page[] {
+    return this.templates.map(({ name, template }) => {
+      const jsArgsList = template.clientJSs.map((c) => c.args);
+      template.resolvePlaceholder(bundleScriptResolver(ctx.bundleJSPath, jsArgsList));
 
-  renderPages(): Page[] {
-    return this.templates.map((t) => {
-      const html = t.template.render();
-      return { name: t.name, html };
+      template.resolvePlaceholder(bundleStylesheetResolver(ctx.bundleCSSPath));
+
+      const html = template.render();
+      return { name: name, html };
     });
   }
 }
@@ -38,7 +50,7 @@ export interface NamedPageTemplate {
 export class PageTemplate {
   private readonly placeholderResolvers: PlaceholderResolver<any>[] = [];
 
-  constructor(private readonly html: string, readonly clientJsPaths: string[]) {}
+  constructor(private readonly html: string, readonly clientJSs: ClientJS[]) {}
 
   resolvePlaceholder<T = {}>(resolver: PlaceholderResolver<T>): void;
   resolvePlaceholder<T = {}>(selector: string, resolve: (data: T) => any): void;

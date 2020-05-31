@@ -22,14 +22,22 @@ export const BundleStylesheet = (props: BundleStylesheetProps) => {
   return createElement(Placeholder, { id: PLACEHOLDER_ID_BUNDLE_STYLESHEET, data: { props } });
 };
 
-export const bundleScriptResolver = (bundleJSPath: string | undefined): PlaceholderResolver => {
+export const bundleScriptResolver = (
+  bundleJSPath: string | undefined,
+  argsList: any[][]
+): PlaceholderResolver => {
+  const argsListJson = JSON.stringify(argsList);
   return {
     selector: `#${PLACEHOLDER_ID_BUNDLE_SCRIPT}`,
     resolve: ({ props }: any) => {
       if (bundleJSPath == null) {
         return null;
       } else {
-        return cheerio('<script>').attr({ ...props, src: `/${bundleJSPath}` });
+        return cheerio('<script>').attr({
+          ...props,
+          src: `/${bundleJSPath}`,
+          onload: `__calmly_bundle_call(${argsListJson})`,
+        });
       }
     },
   };

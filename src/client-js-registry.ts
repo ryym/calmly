@@ -5,7 +5,7 @@ export interface ClientJSEntries {
 }
 
 export interface Registerer {
-  register(path: string): void;
+  register(filePath: string, args: any[]): void;
 }
 
 const Context = createContext<Registerer>({
@@ -15,26 +15,31 @@ const Context = createContext<Registerer>({
 });
 
 // XXX: It is nice if the path can be relative from the component file.
-export const useClientJS = (filePath: string) => {
+export const useClientJS = (filePath: string, ...args: any[]) => {
   const registerer = useContext(Context);
-  registerer.register(filePath);
+  registerer.register(filePath, args);
 };
 
+export interface ClientJS {
+  readonly filePath: string;
+  readonly args: any[];
+}
+
 export class ClientJSRegistry {
-  private paths: string[] = [];
+  private clientJSs: ClientJS[] = [];
   private setupDone = false;
 
   setupRegistration(rootDom: any): any {
     this.setupDone = true;
     const registerer = {
-      register: (path: string) => {
-        this.paths.push(path);
+      register: (filePath: string, args: any[]) => {
+        this.clientJSs.push({ filePath, args });
       },
     };
     return createElement(Context.Provider, { value: registerer }, rootDom);
   }
 
-  getScriptFilePaths(): string[] | null {
-    return this.setupDone ? this.paths : null;
+  getClientJSs(): ClientJS[] | null {
+    return this.setupDone ? this.clientJSs : null;
   }
 }

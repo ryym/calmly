@@ -27,7 +27,11 @@ exports[`E2E helloworld_with_js: index.html 1`] = `
   <body>
     <h1 id=\\"hello\\">Hello</h1>
     <div>content</div>
-    <script className=\\"hello-script\\" src=\\"/index.client.js\\"></script>
+    <script
+      className=\\"hello-script\\"
+      src=\\"/index.client.js\\"
+      onload=\\"__calmly_bundle_call([[]])\\"
+    ></script>
   </body>
 </html>
 "
@@ -67,7 +71,7 @@ exports[`E2E helloworld_with_js_css: index.html 1`] = `
   <body>
     <h1 id=\\"hello\\">Hello</h1>
     <div>content</div>
-    <script src=\\"/index.client.js\\"></script>
+    <script src=\\"/index.client.js\\" onload=\\"__calmly_bundle_call([[]])\\"></script>
   </body>
 </html>
 "
@@ -169,7 +173,10 @@ exports[`E2E multiple_pages_with_js_css: index.html 1`] = `
     <h1>Index</h1>
     <p>This is index page</p>
     <a href=\\"/about\\">About</a>
-    <script src=\\"/index.client.js\\"></script>
+    <script
+      src=\\"/index.client.js\\"
+      onload=\\"__calmly_bundle_call([[],[]])\\"
+    ></script>
   </body>
 </html>
 "

@@ -8,7 +8,6 @@ import * as ReactDOMServer from 'react-dom/server';
 import { loadWebpackConfigs } from './webpack';
 import { loadRoutes, Route } from './routes';
 import { ClientJSRegistry } from './client-js-registry';
-import { bundleStylesheetResolver, bundleScriptResolver } from './placeholder';
 import { PageGroup, PageTemplate } from './page-group';
 
 const writeFile = promisify(fs.writeFile);
@@ -60,12 +59,13 @@ export const build = async (opts: BuildOptions = {}) => {
     pageGroups.map(async (pg) => {
       const clientJSEntry = clientJSEntryFiles.find((r) => r.pageName === pg.name);
 
-      const bundleJSPath = clientJSEntry && jsManifest[clientJSEntry.jsName];
-      pg.resolvePlaceholder(bundleScriptResolver(bundleJSPath));
-      pg.resolvePlaceholder(bundleStylesheetResolver(pageManifest[`${pg.name}.css`]));
+      const renderingContext = {
+        bundleJSPath: clientJSEntry && jsManifest[clientJSEntry.jsName],
+        bundleCSSPath: pageManifest[`${pg.name}.css`],
+      };
 
       await Promise.all(
-        pg.renderPages().map(async (page) => {
+        pg.renderPages(renderingContext).map(async (page) => {
           if (page.name.endsWith('index')) {
             await writeFile(path.join(distPath, `${page.name}.html`), page.html);
           } else {
@@ -108,23 +108,30 @@ const writeClientJSEntryFiles = async (
   cwd: string
 ): Promise<ClientJSEntryFile[]> => {
   const tmpDir = await mkdtemp(path.join(os.tmpdir(), 'calmly-'));
-  const jsPageGroups = pageGroups.filter((p) => p.clientJsPaths.length > 0);
+  const jsPageGroups = pageGroups.filter((p) => p.getClientJSPaths().length > 0);
 
   return await Promise.all(
     jsPageGroups.map(async (pg) => {
-      const jsPaths = pg.clientJsPaths;
+      const jsPaths = pg.getClientJSPaths();
       let js = '';
       jsPaths.forEach((originalPath, i) => {
         js += `import _${i} from '${path.join(cwd, originalPath)}';`;
       });
-      js += '\n';
+      js += '\nglobal.__calmly_bundle_call = function(argsList) {';
       jsPaths.forEach((_path, i) => {
-        js += `_${i}();`;
+        js += `_${i}.apply(null, argsList[${i}]);`;
       });
+      js += '};';
 
       const entryName = `${pg.name}.client`;
       const jsName = `${pg.name}.client.js`;
       const filePath = path.join(tmpDir, jsName);
+
+      const fileDir = path.dirname(filePath);
+      if (!fs.existsSync(fileDir)) {
+        await mkdir(fileDir, { recursive: true });
+      }
+
       await writeFile(filePath, js);
       return { pageName: pg.name, entryName, jsName, filePath };
     })
@@ -188,8 +195,8 @@ const renderPages = async (route: Route, distPath: string): Promise<PageGroup> =
     const jsRegistry = new ClientJSRegistry();
     const wrappedTree = jsRegistry.setupRegistration(domTree);
     const html = ReactDOMServer.renderToStaticMarkup(wrappedTree);
-    const jsPaths = jsRegistry.getScriptFilePaths()!;
-    return new PageTemplate(`<!DOCTYPE html>${html}`, jsPaths);
+    const clientJSs = jsRegistry.getClientJSs()!;
+    return new PageTemplate(`<!DOCTYPE html>${html}`, clientJSs);
   };
 
   let routeConfig: RouteConfig | null = null;
