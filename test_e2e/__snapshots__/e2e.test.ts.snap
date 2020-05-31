@@ -119,6 +119,77 @@ Object {
 }
 `;
 
+exports[`E2E multiple_pages_with_js_css: about.css 1`] = `
+"body {
+  color: #bbb;
+}
+
+h1 {
+  color: red;
+  font-style: italic;
+}
+"
+`;
+
+exports[`E2E multiple_pages_with_js_css: about/index.html 1`] = `
+"<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset=\\"UTF-8\\" />
+    <title>multiple_pages_with_js_css</title>
+    <link rel=\\"stylesheet\\" href=\\"/about.css\\" />
+  </head>
+  <body>
+    <h1>About</h1>
+    <p>This is about page</p>
+    <a href=\\"/\\">Home</a>
+  </body>
+</html>
+"
+`;
+
+exports[`E2E multiple_pages_with_js_css: index.client.js 1`] = `"index.client.js"`;
+
+exports[`E2E multiple_pages_with_js_css: index.css 1`] = `
+"body {
+  color: #bbb;
+}
+"
+`;
+
+exports[`E2E multiple_pages_with_js_css: index.html 1`] = `
+"<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset=\\"UTF-8\\" />
+    <title>multiple_pages_with_js_css</title>
+    <link rel=\\"stylesheet\\" href=\\"/index.css\\" />
+  </head>
+  <body>
+    <h1>Index</h1>
+    <p>This is index page</p>
+    <a href=\\"/about\\">About</a>
+    <script src=\\"/index.client.js\\"></script>
+  </body>
+</html>
+"
+`;
+
+exports[`E2E multiple_pages_with_js_css: js.manifest.json 1`] = `
+Object {
+  "index.client.js": "index.client.js",
+}
+`;
+
+exports[`E2E multiple_pages_with_js_css: manifest.json 1`] = `
+Object {
+  "about.css": "about.css",
+  "about.js": "about.js",
+  "index.css": "index.css",
+  "index.js": "index.js",
+}
+`;
+
 exports[`E2E unnecessary_bundle_tags: index.html 1`] = `
 "<!DOCTYPE html>
 <html>
