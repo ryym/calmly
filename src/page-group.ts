@@ -1,3 +1,10 @@
+import cheerio from 'cheerio';
+import { PLACEHOLDER_ID_BUNDLE_SCRIPT } from './placeholder';
+
+export interface RenderingContext {
+  readonly bundleJSPath: string | null;
+}
+
 export class PageGroup {
   constructor(readonly name: string, private readonly templates: NamedPageTemplate[]) {
     if (templates.length === 0) {
@@ -14,9 +21,9 @@ export class PageGroup {
     this.templates.forEach((t) => t.template.replace(key, value));
   }
 
-  renderPages(): Page[] {
+  renderPages(ctx: RenderingContext): Page[] {
     return this.templates.map((t) => {
-      const html = t.template.render();
+      const html = t.template.render(ctx);
       return { name: t.name, html };
     });
   }
@@ -43,11 +50,25 @@ export class PageTemplate {
     this.replacements.push({ key, value });
   }
 
-  render(): string {
-    const html = this.replacements.reduce((s, r) => {
-      // TODO: Do more practical and secure replacement..
-      return s.replace(`<style>#${r.key}{}</style>`, r.value);
-    }, this.html);
-    return html;
+  render(ctx: RenderingContext): string {
+    const $ = cheerio.load(this.html);
+
+    // Inject the bundle JS script tag if necessary.
+    const $jsPlaceholders = $(`#${PLACEHOLDER_ID_BUNDLE_SCRIPT}`);
+    if ($jsPlaceholders.length > 1) {
+      throw new Error('multiple BundleScript exists but this is nonsense');
+    }
+    if ($jsPlaceholders.length > 0) {
+      const $jsPlaceholder = $jsPlaceholders.first();
+      if (ctx.bundleJSPath == null) {
+        $jsPlaceholder.remove();
+      } else {
+        const data = JSON.parse($jsPlaceholder.attr('data-data')!);
+        const $script = $('<script>').attr({ ...data.props, src: `/${ctx.bundleJSPath}` })!;
+        $jsPlaceholder.replaceWith($script);
+      }
+    }
+
+    return $.html();
   }
 }

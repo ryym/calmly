@@ -59,26 +59,12 @@ export const build = async (opts: BuildOptions = {}) => {
   await Promise.all(
     pageGroups.map(async (pg) => {
       const clientJSEntry = clientJSEntryFiles.find((r) => r.pageName === pg.name);
-
-      // Replace script tag placeholders.
-      if (clientJSEntry == null) {
-        pg.replace(PH_SCRIPT_TAG, '');
-      } else {
-        const realPath = jsManifest[clientJSEntry.jsName];
-        const scriptTag = `<script src="/${realPath}"></script>`;
-        pg.replace(PH_SCRIPT_TAG, scriptTag);
-      }
-
-      // Replace stylesheet tag placeholders.
-      const cssName = `${pg.name}.css`;
-      const cssRealPath = pageManifest[cssName];
-      pg.replace(
-        PH_STYLESHEET_TAG,
-        cssRealPath == null ? '' : `<link rel="stylesheet" href="${cssRealPath}" />`
-      );
+      const renderingCtx = {
+        bundleJSPath: clientJSEntry ? jsManifest[clientJSEntry.jsName] : null,
+      };
 
       await Promise.all(
-        pg.renderPages().map(async (page) => {
+        pg.renderPages(renderingCtx).map(async (page) => {
           if (page.name.endsWith('index')) {
             await writeFile(path.join(distPath, `${page.name}.html`), page.html);
           } else {

@@ -2,10 +2,13 @@
 
 exports[`E2E helloworld: index.html 1`] = `
 "<!DOCTYPE html>
-<body>
-  <h1 id=\\"hello\\">Hello</h1>
-  <div>content</div>
-</body>
+<html>
+  <head></head>
+  <body>
+    <h1 id=\\"hello\\">Hello</h1>
+    <div>content</div>
+  </body>
+</html>
 "
 `;
 
@@ -19,11 +22,14 @@ exports[`E2E helloworld_with_js: index.client.js 1`] = `"index.client.js"`;
 
 exports[`E2E helloworld_with_js: index.html 1`] = `
 "<!DOCTYPE html>
-<body>
-  <h1 id=\\"hello\\">Hello</h1>
-  <div>content</div>
-  <script src=\\"/index.client.js\\"></script>
-</body>
+<html>
+  <head></head>
+  <body>
+    <h1 id=\\"hello\\">Hello</h1>
+    <div>content</div>
+    <script className=\\"hello-script\\" src=\\"/index.client.js\\"></script>
+  </body>
+</html>
 "
 `;
 
@@ -41,21 +47,27 @@ Object {
 
 exports[`E2E multiple_pages: about/index.html 1`] = `
 "<!DOCTYPE html>
-<body>
-  <h1>About</h1>
-  <p>This is about page</p>
-  <a href=\\"/\\">Home</a>
-</body>
+<html>
+  <head></head>
+  <body>
+    <h1>About</h1>
+    <p>This is about page</p>
+    <a href=\\"/\\">Home</a>
+  </body>
+</html>
 "
 `;
 
 exports[`E2E multiple_pages: index.html 1`] = `
 "<!DOCTYPE html>
-<body>
-  <h1>Welcome</h1>
-  <p>This is welcome page</p>
-  <a href=\\"/about\\">About</a>
-</body>
+<html>
+  <head></head>
+  <body>
+    <h1>Welcome</h1>
+    <p>This is welcome page</p>
+    <a href=\\"/about\\">About</a>
+  </body>
+</html>
 "
 `;
 
