@@ -4,6 +4,6 @@ export const renderHTML = (dom, render) => {
   const sheet = new ServerStyleSheet();
   const html = render(sheet.collectStyles(dom));
   const styleTags = sheet.getStyleTags();
-  html.replace('styled-components-style-tags', styleTags);
+  html.resolvePlaceholder('#styled-components-style-tags', () => styleTags);
   return html;
 };
