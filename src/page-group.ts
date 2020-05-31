@@ -1,8 +1,9 @@
 import cheerio from 'cheerio';
-import { PLACEHOLDER_ID_BUNDLE_SCRIPT } from './placeholder';
+import { PLACEHOLDER_ID_BUNDLE_SCRIPT, PLACEHOLDER_ID_BUNDLE_STYLESHEET } from './placeholder';
 
 export interface RenderingContext {
   readonly bundleJSPath: string | null;
+  readonly bundleCSSPath: string | null;
 }
 
 export class PageGroup {
@@ -66,6 +67,26 @@ export class PageTemplate {
         const data = JSON.parse($jsPlaceholder.attr('data-data')!);
         const $script = $('<script>').attr({ ...data.props, src: `/${ctx.bundleJSPath}` })!;
         $jsPlaceholder.replaceWith($script);
+      }
+    }
+
+    // Inject the bundle CSS stylesheet tag if necessary.
+    const $cssPlaceholders = $(`#${PLACEHOLDER_ID_BUNDLE_STYLESHEET}`);
+    if ($cssPlaceholders.length > 1) {
+      throw new Error('multiple BundleStylesheet exists but this is nonsense');
+    }
+    if ($cssPlaceholders.length > 0) {
+      const $cssPlaceholder = $cssPlaceholders.first();
+      if (ctx.bundleCSSPath == null) {
+        $cssPlaceholder.remove();
+      } else {
+        const data = JSON.parse($cssPlaceholder.attr('data-data')!);
+        const $stylesheet = $('<link>').attr({
+          ...data.props,
+          rel: 'stylesheet',
+          href: `/${ctx.bundleCSSPath}`,
+        })!;
+        $cssPlaceholder.replaceWith($stylesheet);
       }
     }
 

@@ -61,6 +61,7 @@ export const build = async (opts: BuildOptions = {}) => {
       const clientJSEntry = clientJSEntryFiles.find((r) => r.pageName === pg.name);
       const renderingCtx = {
         bundleJSPath: clientJSEntry ? jsManifest[clientJSEntry.jsName] : null,
+        bundleCSSPath: pageManifest[`${pg.name}.css`] || null,
       };
 
       await Promise.all(

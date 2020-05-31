@@ -3,6 +3,7 @@ const {
   PH_SCRIPT_TAG,
   PH_STYLESHEET_TAG,
   BundleScript,
+  BundleStylesheet,
 } = require('./dist/lib/placeholder');
 const { useClientJS } = require('./dist/lib/client-js-registry');
 
@@ -12,4 +13,5 @@ module.exports = {
   PH_SCRIPT_TAG,
   PH_STYLESHEET_TAG,
   BundleScript,
+  BundleStylesheet,
 };
