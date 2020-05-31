@@ -14,6 +14,7 @@ const Context = createContext<Registerer>({
   },
 });
 
+// XXX: It is nice if the path can be relative from the component file.
 export const useClientJS = (filePath: string) => {
   const registerer = useContext(Context);
   registerer.register(filePath);
