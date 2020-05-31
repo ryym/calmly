@@ -1,4 +1,5 @@
 import { createElement, ScriptHTMLAttributes, LinkHTMLAttributes } from 'react';
+import cheerio from 'cheerio';
 
 export const usePlaceholder = (placeholderId: string) => {
   return createElement('style', null, `#${placeholderId}{}`);
@@ -11,22 +12,64 @@ const RAND = '84be1ebca008480219397ad7ddc90bb3';
 export const PLACEHOLDER_ID_BUNDLE_SCRIPT = `__calmly_placeholder_id_bundle_script_${RAND}__`;
 export const PLACEHOLDER_ID_BUNDLE_STYLESHEET = `__calmly_placeholder_id_bundle_stylesheet_${RAND}__`;
 
+export interface PlaceholderResolver<T = {}> {
+  // TODO: Use selector instead of id.
+  placeholderId: string;
+  resolve: (data: T) => any;
+}
+
 export type BundleScriptProps = Omit<ScriptHTMLAttributes<HTMLScriptElement>, 'src'>;
 
 export const BundleScript = (props: BundleScriptProps) => {
-  const attrs = {
-    id: PLACEHOLDER_ID_BUNDLE_SCRIPT,
-    'data-data': JSON.stringify({ props }),
-  };
-  return createElement('template', attrs, null);
+  return createElement(Placeholder, { id: PLACEHOLDER_ID_BUNDLE_SCRIPT, data: { props } });
 };
 
 export type BundleStylesheetProps = Omit<LinkHTMLAttributes<HTMLLinkElement>, 'href'>;
 
 export const BundleStylesheet = (props: BundleStylesheetProps) => {
-  const attrs = {
-    id: PLACEHOLDER_ID_BUNDLE_STYLESHEET,
-    'data-data': JSON.stringify({ props }),
-  };
-  return createElement('template', attrs, null);
+  return createElement(Placeholder, { id: PLACEHOLDER_ID_BUNDLE_STYLESHEET, data: { props } });
 };
+
+export const bundleScriptResolver = (bundleJSPath: string | undefined): PlaceholderResolver => {
+  return {
+    placeholderId: PLACEHOLDER_ID_BUNDLE_SCRIPT,
+    resolve: ({ props }: any) => {
+      if (bundleJSPath == null) {
+        return null;
+      } else {
+        return cheerio('<script>').attr({ ...props, src: `/${bundleJSPath}` });
+      }
+    },
+  };
+};
+
+export const bundleStylesheetResolver = (
+  bundleCSSPath: string | undefined
+): PlaceholderResolver => {
+  return {
+    placeholderId: PLACEHOLDER_ID_BUNDLE_STYLESHEET,
+    resolve: ({ props }: any) => {
+      if (bundleCSSPath == null) {
+        return null;
+      } else {
+        return cheerio('<link>').attr({
+          ...props,
+          rel: 'stylesheet',
+          href: `/${bundleCSSPath}`,
+        });
+      }
+    },
+  };
+};
+
+export interface PlaceholderProps<T = {}> {
+  id: string;
+  data?: T;
+}
+
+export const Placeholder = ({ id, data }: PlaceholderProps) => {
+  const dataJson = JSON.stringify(data);
+  return createElement('template', { id, [Placeholder.dataAttributeName]: dataJson }, null);
+};
+
+Placeholder.dataAttributeName = 'data-data';

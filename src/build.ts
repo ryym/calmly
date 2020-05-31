@@ -8,7 +8,7 @@ import * as ReactDOMServer from 'react-dom/server';
 import { loadWebpackConfigs } from './webpack';
 import { loadRoutes, Route } from './routes';
 import { ClientJSRegistry } from './client-js-registry';
-import { PH_SCRIPT_TAG, PH_STYLESHEET_TAG } from './placeholder';
+import { bundleStylesheetResolver, bundleScriptResolver } from './placeholder';
 import { PageGroup, PageTemplate } from './page-group';
 
 const writeFile = promisify(fs.writeFile);
@@ -59,13 +59,13 @@ export const build = async (opts: BuildOptions = {}) => {
   await Promise.all(
     pageGroups.map(async (pg) => {
       const clientJSEntry = clientJSEntryFiles.find((r) => r.pageName === pg.name);
-      const renderingCtx = {
-        bundleJSPath: clientJSEntry ? jsManifest[clientJSEntry.jsName] : null,
-        bundleCSSPath: pageManifest[`${pg.name}.css`] || null,
-      };
+
+      const bundleJSPath = clientJSEntry && jsManifest[clientJSEntry.jsName];
+      pg.resolvePlaceholder(bundleScriptResolver(bundleJSPath));
+      pg.resolvePlaceholder(bundleStylesheetResolver(pageManifest[`${pg.name}.css`]));
 
       await Promise.all(
-        pg.renderPages(renderingCtx).map(async (page) => {
+        pg.renderPages().map(async (page) => {
           if (page.name.endsWith('index')) {
             await writeFile(path.join(distPath, `${page.name}.html`), page.html);
           } else {

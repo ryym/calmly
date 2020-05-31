@@ -1,10 +1,5 @@
 import cheerio from 'cheerio';
-import { PLACEHOLDER_ID_BUNDLE_SCRIPT, PLACEHOLDER_ID_BUNDLE_STYLESHEET } from './placeholder';
-
-export interface RenderingContext {
-  readonly bundleJSPath: string | null;
-  readonly bundleCSSPath: string | null;
-}
+import { Placeholder, PlaceholderResolver } from './placeholder';
 
 export class PageGroup {
   constructor(readonly name: string, private readonly templates: NamedPageTemplate[]) {
@@ -22,9 +17,13 @@ export class PageGroup {
     this.templates.forEach((t) => t.template.replace(key, value));
   }
 
-  renderPages(ctx: RenderingContext): Page[] {
+  resolvePlaceholder<T = {}>(resolver: PlaceholderResolver<T>): void {
+    this.templates.forEach((t) => t.template.resolvePlaceholder(resolver));
+  }
+
+  renderPages(): Page[] {
     return this.templates.map((t) => {
-      const html = t.template.render(ctx);
+      const html = t.template.render();
       return { name: t.name, html };
     });
   }
@@ -42,6 +41,7 @@ export interface NamedPageTemplate {
 
 export class PageTemplate {
   private readonly replacements: { key: string; value: string }[];
+  private readonly placeholderResolvers: PlaceholderResolver<any>[] = [];
 
   constructor(private readonly html: string, readonly clientJsPaths: string[]) {
     this.replacements = [];
@@ -51,42 +51,31 @@ export class PageTemplate {
     this.replacements.push({ key, value });
   }
 
-  render(ctx: RenderingContext): string {
+  resolvePlaceholder<T = {}>(resolver: PlaceholderResolver<T>): void;
+  resolvePlaceholder<T = {}>(selector: string, resolve: (data: T) => any): void;
+  resolvePlaceholder(
+    resolverOrSelector: string | PlaceholderResolver<any>,
+    resolve?: ((data: any) => any) | any
+  ): void {
+    let resolver: PlaceholderResolver<any> | null = null;
+    if (resolve === undefined) {
+      resolver = resolverOrSelector as PlaceholderResolver<any>;
+    } else {
+      resolver = { selector: resolverOrSelector as string, resolve };
+    }
+    this.placeholderResolvers.push(resolver);
+  }
+
+  render(): string {
     const $ = cheerio.load(this.html);
 
-    // Inject the bundle JS script tag if necessary.
-    const $jsPlaceholders = $(`#${PLACEHOLDER_ID_BUNDLE_SCRIPT}`);
-    if ($jsPlaceholders.length > 1) {
-      throw new Error('multiple BundleScript exists but this is nonsense');
-    }
-    if ($jsPlaceholders.length > 0) {
-      const $jsPlaceholder = $jsPlaceholders.first();
-      if (ctx.bundleJSPath == null) {
-        $jsPlaceholder.remove();
-      } else {
-        const data = JSON.parse($jsPlaceholder.attr('data-data')!);
-        const $script = $('<script>').attr({ ...data.props, src: `/${ctx.bundleJSPath}` })!;
-        $jsPlaceholder.replaceWith($script);
-      }
-    }
-
-    // Inject the bundle CSS stylesheet tag if necessary.
-    const $cssPlaceholders = $(`#${PLACEHOLDER_ID_BUNDLE_STYLESHEET}`);
-    if ($cssPlaceholders.length > 1) {
-      throw new Error('multiple BundleStylesheet exists but this is nonsense');
-    }
-    if ($cssPlaceholders.length > 0) {
-      const $cssPlaceholder = $cssPlaceholders.first();
-      if (ctx.bundleCSSPath == null) {
-        $cssPlaceholder.remove();
-      } else {
-        const data = JSON.parse($cssPlaceholder.attr('data-data')!);
-        const $stylesheet = $('<link>').attr({
-          ...data.props,
-          rel: 'stylesheet',
-          href: `/${ctx.bundleCSSPath}`,
-        })!;
-        $cssPlaceholder.replaceWith($stylesheet);
+    for (let resolver of this.placeholderResolvers) {
+      const $placeholders = $(`#${resolver.placeholderId}`);
+      for (let i = 0; i < $placeholders.length; i++) {
+        const $placeholder = $placeholders.eq(i);
+        const data = JSON.parse($placeholder.attr(Placeholder.dataAttributeName) || 'null');
+        const replacement = resolver.resolve(data);
+        $placeholder.replaceWith(replacement);
       }
     }
 
