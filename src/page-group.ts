@@ -13,10 +13,6 @@ export class PageGroup {
     return this.templates[0].template.clientJsPaths;
   }
 
-  replace(key: string, value: string) {
-    this.templates.forEach((t) => t.template.replace(key, value));
-  }
-
   resolvePlaceholder<T = {}>(resolver: PlaceholderResolver<T>): void {
     this.templates.forEach((t) => t.template.resolvePlaceholder(resolver));
   }
@@ -40,16 +36,9 @@ export interface NamedPageTemplate {
 }
 
 export class PageTemplate {
-  private readonly replacements: { key: string; value: string }[];
   private readonly placeholderResolvers: PlaceholderResolver<any>[] = [];
 
-  constructor(private readonly html: string, readonly clientJsPaths: string[]) {
-    this.replacements = [];
-  }
-
-  replace(key: string, value: string) {
-    this.replacements.push({ key, value });
-  }
+  constructor(private readonly html: string, readonly clientJsPaths: string[]) {}
 
   resolvePlaceholder<T = {}>(resolver: PlaceholderResolver<T>): void;
   resolvePlaceholder<T = {}>(selector: string, resolve: (data: T) => any): void;

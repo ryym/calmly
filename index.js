@@ -1,18 +1,8 @@
-const {
-  usePlaceholder,
-  PH_SCRIPT_TAG,
-  PH_STYLESHEET_TAG,
-  BundleScript,
-  BundleStylesheet,
-  Placeholder,
-} = require('./dist/lib/placeholder');
+const { BundleScript, BundleStylesheet, Placeholder } = require('./dist/lib/placeholder');
 const { useClientJS } = require('./dist/lib/client-js-registry');
 
 module.exports = {
   useClientJS,
-  usePlaceholder,
-  PH_SCRIPT_TAG,
-  PH_STYLESHEET_TAG,
   BundleScript,
   BundleStylesheet,
   Placeholder,

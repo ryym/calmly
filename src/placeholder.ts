@@ -1,13 +1,6 @@
 import { createElement, ScriptHTMLAttributes, LinkHTMLAttributes, HTMLAttributes } from 'react';
 import cheerio from 'cheerio';
 
-export const usePlaceholder = (placeholderId: string) => {
-  return createElement('style', null, `#${placeholderId}{}`);
-};
-
-export const PH_SCRIPT_TAG = 'scriptTag';
-export const PH_STYLESHEET_TAG = 'stylesheetTag';
-
 const RAND = '84be1ebca008480219397ad7ddc90bb3';
 const PLACEHOLDER_ID_BUNDLE_SCRIPT = `__calmly_placeholder_id_bundle_script_${RAND}__`;
 const PLACEHOLDER_ID_BUNDLE_STYLESHEET = `__calmly_placeholder_id_bundle_stylesheet_${RAND}__`;
