@@ -45,6 +45,47 @@ Object {
 }
 `;
 
+exports[`E2E helloworld_with_js_css: index.client.js 1`] = `"index.client.js"`;
+
+exports[`E2E helloworld_with_js_css: index.css 1`] = `
+"#hello {
+  color: red;
+}
+
+div {
+  border: 1px solid black;
+}
+"
+`;
+
+exports[`E2E helloworld_with_js_css: index.html 1`] = `
+"<!DOCTYPE html>
+<html>
+  <head>
+    <link rel=\\"stylesheet\\" href=\\"/index.css\\" />
+  </head>
+  <body>
+    <h1 id=\\"hello\\">Hello</h1>
+    <div>content</div>
+    <script src=\\"/index.client.js\\"></script>
+  </body>
+</html>
+"
+`;
+
+exports[`E2E helloworld_with_js_css: js.manifest.json 1`] = `
+Object {
+  "index.client.js": "index.client.js",
+}
+`;
+
+exports[`E2E helloworld_with_js_css: manifest.json 1`] = `
+Object {
+  "index.css": "index.css",
+  "index.js": "index.js",
+}
+`;
+
 exports[`E2E multiple_pages: about/index.html 1`] = `
 "<!DOCTYPE html>
 <html>
@@ -74,6 +115,23 @@ exports[`E2E multiple_pages: index.html 1`] = `
 exports[`E2E multiple_pages: manifest.json 1`] = `
 Object {
   "about.js": "about.js",
+  "index.js": "index.js",
+}
+`;
+
+exports[`E2E unnecessary_bundle_tags: index.html 1`] = `
+"<!DOCTYPE html>
+<html>
+  <head></head>
+  <body>
+    <h1>No script tag and link tag should be rendered</h1>
+  </body>
+</html>
+"
+`;
+
+exports[`E2E unnecessary_bundle_tags: manifest.json 1`] = `
+Object {
   "index.js": "index.js",
 }
 `;

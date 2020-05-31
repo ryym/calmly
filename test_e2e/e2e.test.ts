@@ -89,16 +89,20 @@ const makeSnapshot = async (dir: string, filePath: string): Promise<any> => {
   const content = await readFile(path.join(dir, filePath));
   const ext = path.extname(filePath);
   switch (ext) {
-    case '.html': {
-      return prettier.format(String(content), { parser: 'html' });
-    }
-
     case '.json': {
       return JSON.parse(String(content));
     }
 
+    case '.html': {
+      return prettier.format(String(content), { parser: 'html' });
+    }
+
     case '.js': {
       return prettier.format(String(content), { parser: 'babel' });
+    }
+
+    case '.css': {
+      return prettier.format(String(content), { parser: 'css' });
     }
 
     default:
