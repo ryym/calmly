@@ -1,4 +1,4 @@
-import { createElement, ScriptHTMLAttributes, LinkHTMLAttributes } from 'react';
+import { createElement, ScriptHTMLAttributes, LinkHTMLAttributes, HTMLAttributes } from 'react';
 import cheerio from 'cheerio';
 
 export const usePlaceholder = (placeholderId: string) => {
@@ -9,12 +9,11 @@ export const PH_SCRIPT_TAG = 'scriptTag';
 export const PH_STYLESHEET_TAG = 'stylesheetTag';
 
 const RAND = '84be1ebca008480219397ad7ddc90bb3';
-export const PLACEHOLDER_ID_BUNDLE_SCRIPT = `__calmly_placeholder_id_bundle_script_${RAND}__`;
-export const PLACEHOLDER_ID_BUNDLE_STYLESHEET = `__calmly_placeholder_id_bundle_stylesheet_${RAND}__`;
+const PLACEHOLDER_ID_BUNDLE_SCRIPT = `__calmly_placeholder_id_bundle_script_${RAND}__`;
+const PLACEHOLDER_ID_BUNDLE_STYLESHEET = `__calmly_placeholder_id_bundle_stylesheet_${RAND}__`;
 
 export interface PlaceholderResolver<T = {}> {
-  // TODO: Use selector instead of id.
-  placeholderId: string;
+  selector: string;
   resolve: (data: T) => any;
 }
 
@@ -32,7 +31,7 @@ export const BundleStylesheet = (props: BundleStylesheetProps) => {
 
 export const bundleScriptResolver = (bundleJSPath: string | undefined): PlaceholderResolver => {
   return {
-    placeholderId: PLACEHOLDER_ID_BUNDLE_SCRIPT,
+    selector: `#${PLACEHOLDER_ID_BUNDLE_SCRIPT}`,
     resolve: ({ props }: any) => {
       if (bundleJSPath == null) {
         return null;
@@ -47,7 +46,7 @@ export const bundleStylesheetResolver = (
   bundleCSSPath: string | undefined
 ): PlaceholderResolver => {
   return {
-    placeholderId: PLACEHOLDER_ID_BUNDLE_STYLESHEET,
+    selector: `#${PLACEHOLDER_ID_BUNDLE_STYLESHEET}`,
     resolve: ({ props }: any) => {
       if (bundleCSSPath == null) {
         return null;
@@ -62,8 +61,9 @@ export const bundleStylesheetResolver = (
   };
 };
 
-export interface PlaceholderProps<T = {}> {
-  id: string;
+export type TemplateTagProps = HTMLAttributes<HTMLTemplateElement>;
+
+export interface PlaceholderProps<T = {}> extends TemplateTagProps {
   data?: T;
 }
 

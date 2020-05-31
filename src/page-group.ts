@@ -70,7 +70,7 @@ export class PageTemplate {
     const $ = cheerio.load(this.html);
 
     for (let resolver of this.placeholderResolvers) {
-      const $placeholders = $(`#${resolver.placeholderId}`);
+      const $placeholders = $(resolver.selector);
       for (let i = 0; i < $placeholders.length; i++) {
         const $placeholder = $placeholders.eq(i);
         const data = JSON.parse($placeholder.attr(Placeholder.dataAttributeName) || 'null');
